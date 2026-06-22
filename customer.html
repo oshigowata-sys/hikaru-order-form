@@ -1,0 +1,768 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>取引先マスタ | MeguRee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#f7f3ee;--surface:#fff;--border:#e2d9ce;
+      --orange:#e8630a;--orange-light:#f97316;--orange-pale:#fff4ec;
+      --green:#1e6641;--green-pale:#e8f5ee;
+      --text:#1a1208;--text-muted:#7a6a55;
+      --sidebar-bg:#1a1208;--sidebar-text:#e8d5bc;
+    }
+    body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+    .sidebar{width:240px;min-height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+    .sidebar-logo{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08)}
+    .sidebar-logo img{width:140px;margin-bottom:4px;display:block}
+    .sidebar-logo-sub{font-size:10px;color:rgba(232,213,188,0.4);letter-spacing:2px;}
+    .sidebar-nav{padding:16px 12px;flex:1}
+    .nav-label{font-size:10px;color:rgba(232,213,188,0.3);letter-spacing:2px;padding:0 12px;margin-bottom:8px;margin-top:16px}
+    .nav-label:first-child{margin-top:0}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--sidebar-text);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none;margin-bottom:2px}
+    .nav-item:hover{background:rgba(255,255,255,0.06)}
+    .nav-item.active{background:var(--orange);color:#fff}
+    .nav-item .icon{font-size:16px;width:20px;text-align:center}
+    .main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+    .page-title{font-size:18px;font-weight:700}
+    .page-sub{font-size:14px;color:var(--text-muted);margin-top:2px}
+    .content{padding:28px 32px;flex:1}
+    .card{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden}
+    .card-header{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--border)}
+    .card-title{font-size:14px;font-weight:700}
+    .search-input{padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s;width:220px}
+    .search-input:focus{border-color:var(--orange);background:#fff}
+    table{width:100%;border-collapse:collapse}
+    thead tr{background:var(--bg);border-bottom:1px solid var(--border)}
+    th{padding:10px 16px;text-align:left;font-size:14px;font-weight:700;color:var(--text-muted);letter-spacing:1px;white-space:nowrap}
+    tbody tr{border-bottom:1px solid var(--border);transition:background 0.15s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:var(--bg)}
+    td{padding:13px 16px;font-size:14px;vertical-align:middle;white-space:nowrap}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif}
+    .btn:hover{opacity:0.85}
+    .btn-primary{background:var(--orange);color:#fff}
+    .btn-outline{background:var(--surface);border:1.5px solid var(--orange);color:var(--orange)}
+    .btn-danger-sm{display:inline-flex;align-items:center;padding:5px 12px;border-radius:8px;font-size:14px;font-weight:600;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;cursor:pointer;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif;margin-left:4px}
+    .btn-danger-sm:hover{background:#fee2e2}
+    .btn-sm{padding:5px 12px;font-size:14px;border-radius:8px}
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .overlay.open{display:flex}
+    .modal{background:var(--surface);border-radius:20px;width:520px;max-width:95vw;max-height:90vh;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.18);display:flex;flex-direction:column}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .modal-title{font-size:16px;font-weight:700}
+    .modal-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
+    .modal-close:hover{background:var(--bg)}
+    .modal-body{padding:24px;overflow-y:auto;flex:1;min-height:0}
+    .form-group{margin-bottom:16px}
+    .form-label{display:block;font-size:14px;color:var(--text-muted);font-weight:700;letter-spacing:1px;margin-bottom:6px}
+    .form-input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--surface);transition:border-color 0.2s;outline:none}
+    .form-input:focus{border-color:var(--orange)}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+    .sidebar-footer{padding:12px 12px 16px;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto}
+    .logout-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:rgba(232,213,188,0.5);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none}
+    .logout-item:hover{background:rgba(255,69,0,0.15);color:#ff9a7a}
+    .empty-row td{text-align:center;padding:40px;color:var(--text-muted);font-size:14px}
+    .topbar{display:flex;align-items:center;justify-content:space-between}
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+    .kpi-card{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:18px 20px;position:relative;overflow:hidden}
+    .kpi-card::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--orange)}
+    .kpi-card.green::after{background:var(--green)}
+    .kpi-card.yellow::after{background:#d97706}
+    .kpi-label{font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:6px;letter-spacing:0.5px;}
+    .kpi-value{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--text);line-height:1.2}
+    .kpi-value.warn{color:var(--orange)}
+    .kpi-value.green{color:var(--green)}
+    .kpi-sub{font-size:14px;color:var(--text-muted);margin-top:3px}
+    .topbar-user{display:flex;align-items:center;gap:10px}
+    .topbar-user-name{font-size:14px;font-weight:600;color:var(--text)}
+    .topbar-user-role{font-size:14px;color:var(--text-muted)}
+    .topbar-avatar{width:34px;height:34px;border-radius:10px;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+  </style>
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://raw.githubusercontent.com/oshigowata-sys/order-form/main/meguree_final%20(2).svg" alt="MeguRee">
+    <div class="sidebar-logo-sub">MANAGEMENT</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">メニュー</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon">🏠</span>ダッシュボード</a>
+    <a class="nav-item" href="orders.html"><span class="icon">📋</span>納品書一覧</a>
+    <a class="nav-item" href="invoice-list.html"><span class="icon">🧾</span>請求書管理</a>
+    <a class="nav-item" href="quotation-list.html"><span class="icon">📄</span>見積書管理</a>
+    <div class="nav-label">マスタ管理</div>
+    <a class="nav-item active" href="customer.html"><span class="icon">🏢</span>取引先マスタ</a>
+    <a class="nav-item" href="products.html"><span class="icon">📦</span>商品マスタ</a>
+    <a class="nav-item" href="pricing.html"><span class="icon">💹</span>卸価格管理</a>
+    <div class="nav-label">その他</div>
+    <a class="nav-item" href="settings.html"><span class="icon">⚙️</span>設定</a>
+    <a class="nav-item" href="audit-log.html"><span class="icon">🕓</span>操作履歴</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="logout-item" href="#" onclick="signOut('login.html'); return false;"><span class="icon">🚪</span>ログアウト</a>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">取引先マスタ</div>
+      <div class="page-sub">取引先の登録・編集・削除を管理します</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="btn btn-primary" onclick="openAddModal()">＋ 新規取引先</button>
+      <div class="topbar-user">
+        <div>
+          <div class="topbar-user-name" id="topbarUserName"></div>
+          <div class="topbar-user-role" id="topbarUserRole"></div>
+        </div>
+        <div class="topbar-avatar" id="topbarAvatar">—</div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">取引先数</div>
+        <div class="kpi-value" id="kpiTotal">—</div>
+        <div class="kpi-sub">登録済み</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">プラン上限</div>
+        <div class="kpi-value" id="kpiLimit">—</div>
+        <div class="kpi-sub" id="kpiLimitSub">社まで</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">残り枠</div>
+        <div class="kpi-value green" id="kpiRemaining">—</div>
+        <div class="kpi-sub">追加可能</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">取引先一覧</div>
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 会社名・担当者で検索" oninput="onSearchInput(this.value)">
+      </div>
+      <table>
+        <thead><tr>
+          <th>会社名</th>
+          <th>担当者</th>
+          <th>電話番号</th>
+          <th>メール</th>
+          <th>締め / 支払</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="customerTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div class="overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">新規取引先を追加</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">会社名 <span style="color:#dc2626">*</span></label>
+          <input class="form-input" id="fCompany" type="text" placeholder="例：株式会社MeguRee">
+        </div>
+        <div class="form-group">
+          <label class="form-label">担当者名</label>
+          <input class="form-input" id="fContact" type="text" placeholder="例：田中 太郎">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">メールアドレス</label>
+        <input class="form-input" id="fEmail" type="email" placeholder="例：info@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;justify-content:space-between">
+          <span>電話番号</span>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addPhoneRow()">+ 追加</button>
+        </label>
+        <div id="phoneList"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;justify-content:space-between">
+          <span>FAX番号</span>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addFaxRow()">+ 追加</button>
+        </label>
+        <div id="faxList"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">郵便番号 <span style="font-size:14px;color:var(--text-muted);font-weight:400">（入力すると住所を自動入力）</span></label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="form-input" id="fZip" type="text" placeholder="例：0600001" maxlength="8" style="max-width:160px">
+          <span id="zipStatus" style="font-size:14px;color:var(--text-muted)"></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">住所</label>
+        <input class="form-input" id="fAddress" type="text" placeholder="例：北海道札幌市中央区〇〇1-2-3">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">締め日</label>
+          <select class="form-input" id="fClosing">
+            <option value="">未設定</option>
+            <option value="5">5日</option>
+            <option value="10">10日</option>
+            <option value="15">15日</option>
+            <option value="20">20日</option>
+            <option value="25">25日</option>
+            <option value="28">28日</option>
+            <option value="31">末日</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">支払月</label>
+          <select class="form-input" id="fPaymentOffset">
+            <option value="">未設定</option>
+            <option value="0">当月</option>
+            <option value="1" selected>翌月</option>
+            <option value="2">翌々月</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">支払日</label>
+          <select class="form-input" id="fPayment">
+            <option value="">未設定</option>
+            <option value="5">5日</option>
+            <option value="10">10日</option>
+            <option value="15">15日</option>
+            <option value="20">20日</option>
+            <option value="25">25日</option>
+            <option value="28">28日</option>
+            <option value="31">末日</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="background:var(--bg);border-radius:10px;padding:14px 16px;margin-bottom:0">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:0">
+          <input type="checkbox" id="fIsPersonalTrade" style="width:18px;height:18px;accent-color:var(--orange);cursor:pointer">
+          <span style="font-size:14px;font-weight:700;color:var(--text)">個人間取引（メルカリ等）</span>
+        </label>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:6px;margin-left:28px;line-height:1.5">チェックすると、納品書・請求書・見積書で単価を税込み表示（内税方式）に切替えます。卸取引先はオフのままで税抜き表示（外税方式）を維持します。</div>
+      </div>
+      <div class="form-group" style="margin-bottom:0;margin-top:18px;border-top:1px solid var(--border);padding-top:16px">
+        <label class="form-label" style="margin-bottom:4px">いつもの手数料・送料（税込・消費税は計算しません）</label>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">ここで設定すると、この取引先がログイン注文フォームから注文したとき、自動で手数料・送料が乗ります。注文ごとに変えたいときは、受注の編集画面で上書きできます。未設定（0）なら何も乗りません。</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px">手数料（1単位あたり）</label>
+            <input type="number" id="fDefHandlingFee" value="0" min="0" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--surface)">
+            <label style="display:block;font-size:11px;color:var(--text-muted);margin:6px 0 2px">× 数量</label>
+            <input type="number" id="fDefHandlingFeeQty" value="1" min="1" step="1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--surface)">
+            <select id="fDefHandlingFeeDir" style="width:100%;margin-top:6px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;background:var(--surface)">
+              <option value="deduct" selected>差し引く（−）</option>
+              <option value="charge">請求に加える（＋）</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px">送料（1単位あたり）</label>
+            <input type="number" id="fDefShippingFee" value="0" min="0" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--surface)">
+            <label style="display:block;font-size:11px;color:var(--text-muted);margin:6px 0 2px">× 数量</label>
+            <input type="number" id="fDefShippingFeeQty" value="1" min="1" step="1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--surface)">
+            <select id="fDefShippingFeeDir" style="width:100%;margin-top:6px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;background:var(--surface)">
+              <option value="deduct" selected>差し引く（−）</option>
+              <option value="charge">請求に加える（＋）</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5">1単位あたりの金額×数量で計算します（例：送料¥1,000×1）。「差し引く（−）」「請求に加える（＋）」を選べます。</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveCustomer()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="overlay" id="upgradeOverlay">
+  <div class="modal" style="max-width:440px">
+    <div style="background:linear-gradient(135deg,var(--orange) 0%,#f97316 100%);padding:32px 28px 24px;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">🔒</div>
+      <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px">取引先の上限に達しました</div>
+      <div style="font-size:14px;color:rgba(255,255,255,0.85)">スタータープランは取引先8社まで登録できます</div>
+    </div>
+    <div style="padding:24px 28px">
+      <div style="background:var(--bg);border-radius:12px;padding:16px 20px;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+          <span style="font-size:14px;font-weight:700">スターター</span>
+          <span style="font-size:14px;color:var(--text-muted)">取引先 最大8社</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:14px;font-weight:700;color:var(--orange)">スタンダード</span>
+          <span style="font-size:14px;color:var(--orange);font-weight:700">取引先 無制限 ✓</span>
+        </div>
+      </div>
+      <a href="https://oshigowata-sys.github.io/order-form/contact.html" style="display:block;background:var(--orange);color:#fff;text-align:center;padding:13px;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px">アップグレードを申し込む</a>
+      <button onclick="document.getElementById('upgradeOverlay').classList.remove('open')" style="display:block;width:100%;background:none;border:1.5px solid var(--border);color:var(--text-muted);padding:11px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ログイン発行 Modal -->
+<div class="overlay" id="loginIssueOverlay" onclick="if(event.target===this)closeLoginIssueModal()">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title" id="loginIssueTitle">注文ログインの発行</div>
+      <button class="modal-close" onclick="closeLoginIssueModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;line-height:1.7">この登録リンクを取引先に渡してください。取引先がリンクを開いてご自身でID・パスワードを設定すると、ログインして注文できるようになります。<br><strong>有効期限は14日間</strong>です。</p>
+      <div id="loginIssueLoading" style="text-align:center;padding:20px;color:var(--text-muted)">発行中...</div>
+      <div id="loginIssueResult" style="display:none">
+        <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:16px">
+          <span id="loginIssueUrl" style="font-size:13px;color:var(--text-muted);flex:1;word-break:break-all;text-align:left"></span>
+          <button class="btn btn-outline btn-sm" style="flex-shrink:0" onclick="copyLoginIssueUrl()">コピー</button>
+        </div>
+        <p id="loginIssueCopied" style="font-size:14px;color:var(--green);display:none;text-align:center">✓ コピーしました</p>
+      </div>
+      <div id="loginIssueError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#991b1b"></div>
+    </div>
+  </div>
+</div>
+
+
+<script src="config.js"></script>
+<script src="auth.js?v=20260510-idletimer"></script>
+<script>
+  // ===== ページガード =====
+  checkAuth();
+  const userData = JSON.parse(sessionStorage.getItem('user') || '{}');
+  const { tenantId, tenantPlan: _storedPlan, name: userName, role: userRole } = userData;
+
+  // Topbar user info
+  (() => {
+    const nameEl = document.getElementById('topbarUserName');
+    const roleEl = document.getElementById('topbarUserRole');
+    const avatarEl = document.getElementById('topbarAvatar');
+    if (userName) { nameEl.textContent = userName; roleEl.textContent = userRole === 'admin' ? '管理者' : 'スタッフ'; avatarEl.textContent = userName.charAt(0); }
+  })();
+
+  function sbFetch(path, options = {}) {
+    return fetch(SB_URL + path, {
+      ...options,
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + getAccessToken(),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        ...(options.headers || {})
+      }
+    });
+  }
+
+  let customers = [];
+  let currentSearch = '';
+
+  function onSearchInput(val) {
+    currentSearch = val.trim();
+    render();
+  }
+  let editId = null;
+  let tenantPlan = _storedPlan || 'standard';
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatDay(val) {
+    if (!val) return '';
+    return val == 31 ? '末日' : val + '日';
+  }
+
+  function formatClosingPayment(closing, paymentOffset, payment) {
+    const c = formatDay(closing);
+    const p = formatDay(payment);
+    const monthLabels = { 0: '当月', 1: '翌月', 2: '翌々月' };
+    const m = paymentOffset !== '' && paymentOffset != null ? (monthLabels[paymentOffset] || '') : '';
+    if (c && m && p) return `${c}締め / ${m}${p}払`;
+    if (c && p) return `${c}締め / ${p}払`;
+    if (c) return `${c}締め`;
+    return '';
+  }
+
+  async function loadCustomers() {
+    const tbody = document.getElementById('customerTbody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">読み込み中...</td></tr>';
+    try {
+      const res = await sbFetch(`/rest/v1/customers?tenant_id=eq.${tenantId}&select=*&order=company_name`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      customers = data.map(r => ({
+        id:      r.id,
+        company: r.company_name  || '',
+        contact: r.contact_name  || '',
+        phone:   r.phone         || '',
+        email:   r.email         || '',
+        postalCode:     r.postal_code        || '',
+        address:        r.address            || '',
+        closing:        r.closing_day        != null ? r.closing_day        : '',
+        paymentOffset:  r.payment_month_offset != null ? r.payment_month_offset : '',
+        payment:        r.payment_day        != null ? r.payment_day        : '',
+        isPersonalTrade: !!r.is_personal_trade,
+        defHandlingFee:    Number(r.default_handling_fee) || 0,
+        defShippingFee:    Number(r.default_shipping_fee) || 0,
+        defHandlingCharge: !!r.default_handling_fee_charge,
+        defShippingCharge: !!r.default_shipping_fee_charge,
+        defHandlingQty:    r.default_handling_fee_qty != null ? Number(r.default_handling_fee_qty) : 1,
+        defShippingQty:    r.default_shipping_fee_qty != null ? Number(r.default_shipping_fee_qty) : 1,
+      }));
+      customers.sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+      render();
+    } catch(e) {
+      console.error('顧客データ取得失敗:', e);
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#991b1b">データ取得に失敗しました <button onclick="loadCustomers()" style="margin-left:12px;padding:6px 14px;background:#dc2626;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:14px">再読み込み</button></td></tr>';
+    }
+  }
+
+  function updateKPIs() {
+    const limit = tenantPlan === 'starter' ? 8 : 999;
+    const remaining = limit === 999 ? '∞' : Math.max(0, limit - customers.length);
+    document.getElementById('kpiTotal').textContent = customers.length;
+    document.getElementById('kpiLimit').textContent = limit === 999 ? '無制限' : limit;
+    document.getElementById('kpiLimitSub').textContent = limit === 999 ? '（スタンダード）' : '社まで（スターター）';
+    document.getElementById('kpiRemaining').textContent = remaining;
+  }
+
+  function render() {
+    updateKPIs();
+    const tbody = document.getElementById('customerTbody');
+    if (customers.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">取引先が登録されていません</td></tr>';
+      return;
+    }
+    const q = currentSearch.toLowerCase();
+    const list = q ? customers.filter(c => c.company.toLowerCase().includes(q) || c.contact.toLowerCase().includes(q)) : customers;
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">該当する取引先が見つかりません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(c => `<tr>
+      <td style="font-weight:600">${esc(c.company)}${c.isPersonalTrade ? ' <span style="display:inline-block;font-size:11px;font-weight:600;color:var(--orange);background:var(--orange-pale);padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle">個人取引</span>' : ''}</td>
+      <td style="color:var(--text-muted)">${esc(c.contact)}</td>
+      <td style="font-family:'Space Grotesk',sans-serif;color:var(--text-muted);font-size:14px">${esc(c.phone)}</td>
+      <td style="color:var(--text-muted);font-size:14px">${esc(c.email)}</td>
+      <td style="font-weight:600;color:var(--orange);font-size:14px">${formatClosingPayment(c.closing, c.paymentOffset, c.payment)}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openEditModal('${esc(c.id)}')">編集</button>
+        <button class="btn btn-outline btn-sm" style="border-color:var(--orange);color:var(--orange)" onclick="openLoginIssueModal('${esc(c.id)}')">ログイン発行</button>
+        <button class="btn-danger-sm" onclick="deleteCustomer('${esc(c.id)}')">削除</button>
+      </td>
+    </tr>`).join('');
+  }
+
+  // ── 郵便番号 → 住所自動入力 ──
+  let _zipTimer = null;
+  document.getElementById('fZip').addEventListener('input', function() {
+    clearTimeout(_zipTimer);
+    const zip = this.value.replace(/[^0-9]/g, '');
+    if (zip.length !== 7) { document.getElementById('zipStatus').textContent = ''; return; }
+    document.getElementById('zipStatus').textContent = '検索中...';
+    _zipTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://postcode.teraren.com/postcodes/${zip}.json`);
+        if (res.status === 404) { document.getElementById('zipStatus').textContent = '該当なし'; return; }
+        const data = await res.json();
+        const addr = (data.prefecture || '') + (data.city || '') + (data.suburb || '');
+        if (addr) {
+          document.getElementById('fAddress').value = addr;
+          document.getElementById('zipStatus').textContent = '✓ 住所を入力しました';
+          setTimeout(() => { document.getElementById('zipStatus').textContent = ''; }, 3000);
+        } else {
+          document.getElementById('zipStatus').textContent = '該当なし';
+        }
+      } catch { document.getElementById('zipStatus').textContent = '該当なし'; }
+    }, 400);
+  });
+
+  function openAddModal() {
+    editId = null;
+    document.getElementById('modalTitle').textContent = '新規取引先を追加';
+    ['fCompany','fContact','fEmail','fAddress','fClosing','fPaymentOffset','fPayment'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('fZip').value = '';
+    document.getElementById('zipStatus').textContent = '';
+    document.getElementById('fIsPersonalTrade').checked = false;
+    document.getElementById('fDefHandlingFee').value = '0';
+    document.getElementById('fDefHandlingFeeQty').value = '1';
+    document.getElementById('fDefHandlingFeeDir').value = 'deduct';
+    document.getElementById('fDefShippingFee').value = '0';
+    document.getElementById('fDefShippingFeeQty').value = '1';
+    document.getElementById('fDefShippingFeeDir').value = 'deduct';
+    _phones = [];
+    _faxes  = [];
+    renderContactRows();
+    document.getElementById('modalOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('fCompany').focus(), 100);
+  }
+
+  async function openEditModal(id) {
+    const c = customers.find(x => x.id === id);
+    if (!c) return;
+    editId = id;
+    document.getElementById('modalTitle').textContent = '取引先を編集';
+    document.getElementById('fCompany').value  = c.company;
+    document.getElementById('fContact').value  = c.contact;
+    document.getElementById('fEmail').value    = c.email;
+    document.getElementById('fZip').value            = c.postalCode || '';
+    document.getElementById('zipStatus').textContent  = '';
+    document.getElementById('fAddress').value         = c.address;
+    document.getElementById('fClosing').value        = c.closing;
+    document.getElementById('fPaymentOffset').value  = c.paymentOffset;
+    document.getElementById('fPayment').value        = c.payment;
+    document.getElementById('fIsPersonalTrade').checked = !!c.isPersonalTrade;
+    document.getElementById('fDefHandlingFee').value = c.defHandlingFee != null ? c.defHandlingFee : 0;
+    document.getElementById('fDefHandlingFeeQty').value = c.defHandlingQty != null ? c.defHandlingQty : 1;
+    document.getElementById('fDefHandlingFeeDir').value = c.defHandlingCharge ? 'charge' : 'deduct';
+    document.getElementById('fDefShippingFee').value = c.defShippingFee != null ? c.defShippingFee : 0;
+    document.getElementById('fDefShippingFeeQty').value = c.defShippingQty != null ? c.defShippingQty : 1;
+    document.getElementById('fDefShippingFeeDir').value = c.defShippingCharge ? 'charge' : 'deduct';
+    _phones = [];
+    _faxes  = [];
+    renderContactRows();
+    document.getElementById('modalOverlay').classList.add('open');
+    await loadContacts(id);
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  // ===== 連絡先（電話・FAX 複数管理） =====
+  let _phones = []; // [{ label, value }]
+  let _faxes  = []; // [{ label, value }]
+
+  function renderContactRows() {
+    const renderRows = (arr, type, phLabel, phNum) => arr.map((row, i) => `
+      <div style="display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;margin-bottom:8px">
+        <input class="form-input" type="text" placeholder="${phLabel}" value="${esc(row.label || '')}" oninput="updateContact('${type}', ${i}, 'label', this.value)">
+        <input class="form-input" type="tel" placeholder="${phNum}" value="${esc(row.value || '')}" oninput="updateContact('${type}', ${i}, 'value', this.value)">
+        <button type="button" class="btn-danger-sm" style="margin-left:0" onclick="removeContact('${type}', ${i})">削除</button>
+      </div>
+    `).join('') || `<div style="font-size:14px;color:var(--text-muted);padding:6px 0">「+ 追加」で${type === 'phone' ? '電話' : 'FAX'}番号を登録</div>`;
+    document.getElementById('phoneList').innerHTML = renderRows(_phones, 'phone', '例：会社代表', '例：03-1234-5678');
+    document.getElementById('faxList').innerHTML   = renderRows(_faxes,  'fax',   '例：本社FAX',  '例：03-1234-5679');
+  }
+
+  function updateContact(type, idx, key, value) {
+    const arr = type === 'phone' ? _phones : _faxes;
+    if (arr[idx]) arr[idx][key] = value;
+  }
+
+  function addPhoneRow() {
+    _phones.push({ label: '', value: '' });
+    renderContactRows();
+  }
+
+  function addFaxRow() {
+    _faxes.push({ label: '', value: '' });
+    renderContactRows();
+  }
+
+  function removeContact(type, idx) {
+    const arr = type === 'phone' ? _phones : _faxes;
+    arr.splice(idx, 1);
+    renderContactRows();
+  }
+
+  async function loadContacts(customerId) {
+    _phones = [];
+    _faxes  = [];
+    if (!customerId) { renderContactRows(); return; }
+    try {
+      const res = await sbFetch(`/rest/v1/customer_contacts?customer_id=eq.${customerId}&select=*&order=display_order.asc,created_at.asc`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+      rows.forEach(r => {
+        const entry = { label: r.label || '', value: r.contact_value || '' };
+        if (r.contact_type === 'phone') _phones.push(entry);
+        else if (r.contact_type === 'fax') _faxes.push(entry);
+      });
+    } catch(e) {
+      console.error('連絡先取得エラー', e);
+    }
+    renderContactRows();
+  }
+
+  async function saveContacts(customerId) {
+    const delRes = await sbFetch(`/rest/v1/customer_contacts?customer_id=eq.${customerId}`, {
+      method: 'DELETE',
+      headers: { 'Prefer': 'return=minimal' },
+    });
+    if (!delRes.ok && delRes.status !== 404) throw new Error('contacts delete HTTP ' + delRes.status);
+
+    const rows = [];
+    _phones.forEach((p, i) => {
+      const v = (p.value || '').trim();
+      if (!v) return;
+      rows.push({
+        customer_id: customerId,
+        tenant_id: tenantId,
+        contact_type: 'phone',
+        contact_value: v,
+        label: (p.label || '').trim() || null,
+        display_order: i,
+      });
+    });
+    _faxes.forEach((f, i) => {
+      const v = (f.value || '').trim();
+      if (!v) return;
+      rows.push({
+        customer_id: customerId,
+        tenant_id: tenantId,
+        contact_type: 'fax',
+        contact_value: v,
+        label: (f.label || '').trim() || null,
+        display_order: i,
+      });
+    });
+    if (rows.length === 0) return;
+
+    const insRes = await sbFetch('/rest/v1/customer_contacts', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify(rows),
+    });
+    if (!insRes.ok) throw new Error('contacts insert HTTP ' + insRes.status);
+  }
+
+  async function saveCustomer() {
+    const company = document.getElementById('fCompany').value.trim();
+    if (!company) { alert('会社名は必須です'); document.getElementById('fCompany').focus(); return; }
+    const mainPhone = (_phones.find(p => (p.value || '').trim())?.value || '').trim();
+    const payload = {
+      company_name: company,
+      contact_name: document.getElementById('fContact').value.trim() || null,
+      phone:        mainPhone || null,
+      email:        document.getElementById('fEmail').value.trim()   || null,
+      postal_code:  document.getElementById('fZip').value.trim() || null,
+      address:      document.getElementById('fAddress').value.trim() || null,
+      closing_day:           Number(document.getElementById('fClosing').value)        || null,
+      payment_month_offset:  document.getElementById('fPaymentOffset').value !== '' ? Number(document.getElementById('fPaymentOffset').value) : null,
+      payment_day:           Number(document.getElementById('fPayment').value)        || null,
+      is_personal_trade:     document.getElementById('fIsPersonalTrade').checked,
+      default_handling_fee:        Number(document.getElementById('fDefHandlingFee').value) || 0,
+      default_shipping_fee:        Number(document.getElementById('fDefShippingFee').value) || 0,
+      default_handling_fee_charge: document.getElementById('fDefHandlingFeeDir').value === 'charge',
+      default_shipping_fee_charge: document.getElementById('fDefShippingFeeDir').value === 'charge',
+      default_handling_fee_qty:    Number(document.getElementById('fDefHandlingFeeQty').value) || 1,
+      default_shipping_fee_qty:    Number(document.getElementById('fDefShippingFeeQty').value) || 1,
+      tenant_id:    tenantId,
+    };
+    const saveBtn = document.querySelector('#modalOverlay .btn-primary');
+    saveBtn.disabled = true; saveBtn.textContent = '保存中...';
+    try {
+      let customerId = editId;
+      if (editId) {
+        const res = await sbFetch('/rest/v1/customers?id=eq.' + editId, { method: 'PATCH', body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+      } else {
+        if (tenantPlan === 'starter' && customers.length >= 8) {
+          saveBtn.disabled = false; saveBtn.textContent = '保存する';
+          closeModal();
+          document.getElementById('upgradeOverlay').classList.add('open');
+          return;
+        }
+        const res = await sbFetch('/rest/v1/customers', { method: 'POST', body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        customerId = data?.[0]?.id;
+      }
+      if (customerId) {
+        await saveContacts(customerId);
+      }
+      closeModal();
+      await loadCustomers();
+    } catch(e) {
+      console.error(e);
+      alert('保存に失敗しました。もう一度お試しください。');
+    } finally {
+      saveBtn.disabled = false; saveBtn.textContent = '保存する';
+    }
+  }
+
+  async function deleteCustomer(id) {
+    const c = customers.find(x => x.id === id);
+    if (!c) return;
+    if (!confirm(`「${c.company}」を削除してよろしいですか？`)) return;
+    try {
+      const res = await sbFetch('/rest/v1/customers?id=eq.' + id, { method: 'DELETE' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      await loadCustomers();
+    } catch(e) {
+      console.error(e);
+      alert('削除に失敗しました。');
+    }
+  }
+
+  const RETAIL_INVITE_BASE = 'https://oshigowata-sys.github.io/order-form/invite-retail.html';
+
+  // ── 小売店のログインアカウント発行（招待リンク） ──
+  async function openLoginIssueModal(id) {
+    const c = customers.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('loginIssueTitle').textContent = `${c.company} — 注文ログインの発行`;
+    document.getElementById('loginIssueResult').style.display = 'none';
+    document.getElementById('loginIssueError').style.display = 'none';
+    document.getElementById('loginIssueCopied').style.display = 'none';
+    document.getElementById('loginIssueLoading').style.display = 'block';
+    document.getElementById('loginIssueOverlay').classList.add('open');
+    try {
+      const res = await sbFetch('/rest/v1/rpc/create_retail_invitation', {
+        method: 'POST',
+        body: JSON.stringify({ p_customer_id: id })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const inv = Array.isArray(data) ? data[0] : data;
+      if (!inv || !inv.token) throw new Error('発行に失敗しました');
+      const url = `${RETAIL_INVITE_BASE}?token=${encodeURIComponent(inv.token)}`;
+      document.getElementById('loginIssueUrl').textContent = url;
+      document.getElementById('loginIssueLoading').style.display = 'none';
+      document.getElementById('loginIssueResult').style.display = 'block';
+    } catch(e) {
+      console.error(e);
+      document.getElementById('loginIssueLoading').style.display = 'none';
+      const errEl = document.getElementById('loginIssueError');
+      errEl.textContent = '発行に失敗しました。時間をおいて再度お試しください。';
+      errEl.style.display = 'block';
+    }
+  }
+
+  function closeLoginIssueModal() {
+    document.getElementById('loginIssueOverlay').classList.remove('open');
+  }
+
+  function copyLoginIssueUrl() {
+    const url = document.getElementById('loginIssueUrl').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+      document.getElementById('loginIssueCopied').style.display = 'block';
+      setTimeout(() => { document.getElementById('loginIssueCopied').style.display = 'none'; }, 2000);
+    });
+  }
+
+
+  loadCustomers();
+</script>
+<script src="mobile.js"></script>
+</body>
+</html>

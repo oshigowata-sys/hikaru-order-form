@@ -1,0 +1,617 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設定 | MeguRee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#f7f3ee;--surface:#fff;--border:#e2d9ce;
+      --orange:#e8630a;--orange-light:#f97316;--orange-pale:#fff4ec;
+      --green:#1e6641;--green-pale:#e8f5ee;
+      --text:#1a1208;--text-muted:#7a6a55;
+      --sidebar-bg:#1a1208;--sidebar-text:#e8d5bc;
+    }
+    body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+    .sidebar{width:240px;min-height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+    .sidebar-logo{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08)}
+    .sidebar-logo img{width:140px;margin-bottom:4px;display:block}
+    .sidebar-logo-sub{font-size:10px;color:rgba(232,213,188,0.4);letter-spacing:2px;}
+    .sidebar-nav{padding:16px 12px;flex:1}
+    .nav-label{font-size:10px;color:rgba(232,213,188,0.3);letter-spacing:2px;padding:0 12px;margin-bottom:8px;margin-top:16px}
+    .nav-label:first-child{margin-top:0}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--sidebar-text);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none;margin-bottom:2px}
+    .nav-item:hover{background:rgba(255,255,255,0.06)}
+    .nav-item.active{background:var(--orange);color:#fff}
+    .nav-item .icon{font-size:16px;width:20px;text-align:center}
+    .sidebar-footer{padding:12px 12px 16px;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto}
+    .logout-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:rgba(232,213,188,0.5);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none}
+    .logout-item:hover{background:rgba(255,69,0,0.15);color:#ff9a7a}
+    .main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+    .page-title{font-size:18px;font-weight:700}
+    .page-sub{font-size:14px;color:var(--text-muted);margin-top:2px}
+    .content{padding:28px 32px;flex:1}
+    .settings-grid{display:flex;flex-direction:column;gap:20px;max-width:720px}
+    .settings-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+    .settings-card-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+    .settings-card-icon{font-size:18px}
+    .settings-card-title{font-size:14px;font-weight:700}
+    .settings-card-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-label{font-size:14px;font-weight:600;color:var(--text-muted);letter-spacing:0.5px}
+    .form-label span{color:#dc2626;margin-left:2px}
+    .form-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--bg);outline:none;transition:border-color 0.2s}
+    .form-input:focus{border-color:var(--orange);background:white}
+    .form-input::placeholder{color:#bbb}
+    textarea.form-input{resize:vertical;min-height:72px}
+    .settings-card-footer{padding:14px 24px;border-top:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:flex-end;gap:12px}
+    .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;padding:10px 24px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:background 0.2s;font-family:'Noto Sans JP',sans-serif}
+    .btn-primary:hover{background:var(--orange-light)}
+    .save-msg{font-size:14px;font-weight:600;color:var(--green);display:none;align-items:center;gap:6px}
+    .save-msg.show{display:flex}
+    .divider{height:1px;background:var(--border);margin:4px 0}
+    .bank-list{display:flex;flex-direction:column;gap:12px}
+    .bank-account{border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:14px}
+    .bank-account-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .bank-account-title{font-size:14px;font-weight:700;color:var(--text)}
+    .btn-secondary{display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--text);padding:9px 14px;border-radius:9px;font-size:14px;font-weight:700;border:1px solid var(--border);cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+    .btn-secondary:hover{border-color:var(--orange);color:var(--orange)}
+    .btn-danger{background:#fff;color:#dc2626;border:1px solid #fecaca;padding:7px 10px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+    .btn-danger:hover{background:#fef2f2}
+    .preview-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+    .preview-card-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+    .preview-card-body{padding:20px 24px}
+    .preview-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:14px;line-height:1.9}
+    .preview-label{font-size:14px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px}
+    .preview-name{font-size:16px;font-weight:700;margin-bottom:2px}
+    .preview-address{color:var(--text-muted);font-size:14px;margin-bottom:12px}
+    .preview-bank-title{font-size:14px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px}
+    .preview-bank{font-size:14px;line-height:1.8}
+    .url-box{display:flex;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+    .url-text{flex:1;font-size:14px;font-family:monospace;color:var(--text-muted);word-break:break-all}
+    .copy-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;white-space:nowrap}
+    .copy-btn:hover{border-color:var(--orange);color:var(--orange)}
+  </style>
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://raw.githubusercontent.com/oshigowata-sys/order-form/main/meguree_final%20(2).svg" alt="MeguRee">
+    <div class="sidebar-logo-sub">受注管理システム</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">メニュー</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon">🏠</span>ダッシュボード</a>
+    <a class="nav-item" href="orders.html"><span class="icon">📋</span>納品書一覧</a>
+    <a class="nav-item" href="invoice-list.html"><span class="icon">🧾</span>請求書管理</a>
+    <a class="nav-item" href="quotation-list.html"><span class="icon">📄</span>見積書管理</a>
+    <div class="nav-label">マスタ管理</div>
+    <a class="nav-item" href="customer.html"><span class="icon">🏢</span>取引先マスタ</a>
+    <a class="nav-item" href="products.html"><span class="icon">📦</span>商品マスタ</a>
+    <a class="nav-item" href="pricing.html"><span class="icon">💹</span>卸価格管理</a>
+    <div class="nav-label">その他</div>
+    <a class="nav-item active" href="settings.html"><span class="icon">⚙️</span>設定</a>
+    <a class="nav-item" href="audit-log.html"><span class="icon">🕓</span>操作履歴</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="logout-item" href="#" onclick="signOut('login.html'); return false;"><span class="icon">🚪</span>ログアウト</a>
+  </div>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">設定</div>
+      <div class="page-sub">請求書・納品書に印刷される会社情報・振込先を管理します</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="settings-grid">
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <span class="settings-card-icon">🏢</span>
+          <div class="settings-card-title">会社情報</div>
+        </div>
+        <div class="settings-card-body">
+          <div class="form-group">
+            <label class="form-label">会社名<span>*</span></label>
+            <input type="text" class="form-input" id="companyName" placeholder="例：株式会社MeguRee" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">郵便番号</label>
+            <input type="text" class="form-input" id="companyZip" placeholder="例：060-0001" style="max-width:180px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">住所</label>
+            <textarea class="form-input" id="companyAddress" placeholder="例：北海道札幌市中央区北1条西2丁目"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">電話番号</label>
+              <input type="text" class="form-input" id="companyTel" placeholder="例：011-123-4567" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">FAX番号</label>
+              <input type="text" class="form-input" id="companyFax" placeholder="例：011-123-4568" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">メールアドレス</label>
+              <input type="text" class="form-input" id="companyEmail" placeholder="例：info@example.com" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">登録番号（インボイス）</label>
+            <input type="text" class="form-input" id="companyInvoiceNo" placeholder="例：T1234567890123" style="max-width:260px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">担当者名</label>
+            <input type="text" class="form-input" id="companyPerson" placeholder="例：嶋田 洋" style="max-width:260px" />
+          </div>
+        </div>
+        <div class="settings-card-footer">
+          <div class="save-msg" id="saveMsgCompany">✓ 保存しました</div>
+          <button class="btn-primary" onclick="saveCompany()">保存する</button>
+        </div>
+      </div>
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <span class="settings-card-icon">🏦</span>
+          <div class="settings-card-title">振込先情報</div>
+        </div>
+        <div class="settings-card-body">
+          <div class="bank-list" id="bankAccounts"></div>
+          <button class="btn-secondary" type="button" onclick="addBankAccount()">+ 振込先を追加</button>
+          <div class="form-group">
+            <label class="form-label">支払期限（受注日から何日後）</label>
+            <input type="number" class="form-input" id="paymentDays" placeholder="例：30" value="30" style="max-width:120px" />
+          </div>
+        </div>
+        <div class="settings-card-footer">
+          <div class="save-msg" id="saveMsgBank">✓ 保存しました</div>
+          <button class="btn-primary" onclick="saveBank()">保存する</button>
+        </div>
+      </div>
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <span class="settings-card-icon">🔑</span>
+          <div class="settings-card-title">ログイン情報の変更</div>
+        </div>
+        <div class="settings-card-body">
+          <div class="form-group">
+            <label class="form-label">現在のパスワード<span>*</span></label>
+            <input type="password" class="form-input" id="currentPassword" placeholder="現在のパスワードを入力" style="max-width:320px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">新しいログインID</label>
+            <input type="text" class="form-input" id="newLoginId" placeholder="変更する場合のみ入力" style="max-width:320px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">新しいパスワード</label>
+            <input type="password" class="form-input" id="newPassword" placeholder="変更する場合のみ入力" style="max-width:320px" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">新しいパスワード（確認）</label>
+            <input type="password" class="form-input" id="newPasswordConfirm" placeholder="もう一度入力" style="max-width:320px" />
+          </div>
+        </div>
+        <div class="settings-card-footer">
+          <div class="save-msg" id="saveMsgLogin">✓ 変更しました</div>
+          <button class="btn-primary" onclick="saveLogin()">変更する</button>
+        </div>
+      </div>
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <span class="settings-card-icon">🔗</span>
+          <div class="settings-card-title">注文フォームURL</div>
+        </div>
+        <div class="settings-card-body">
+          <p style="font-size:14px;color:var(--text-muted);line-height:1.7">このURLを取引先（小売店など）に共有してください。あなたの会社専用の注文フォームです。</p>
+          <div class="url-box">
+            <div class="url-text" id="orderFormUrl">読み込み中...</div>
+            <button class="copy-btn" onclick="copyOrderFormUrl()">コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <div class="preview-card-header">
+          <span class="settings-card-icon">👁️</span>
+          <div class="settings-card-title">請求書・納品書 印刷プレビュー</div>
+        </div>
+        <div class="preview-card-body">
+          <div class="preview-label">表示イメージ</div>
+          <div class="preview-box">
+            <div class="preview-name" id="previewName">—</div>
+            <div class="preview-address" id="previewAddress">—</div>
+            <div class="divider"></div>
+            <div class="preview-bank-title">お振込先</div>
+            <div class="preview-bank" id="previewBank">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script src="auth.js?v=20260510-idletimer"></script>
+<script>
+  checkAuth();
+  const { tenantId } = JSON.parse(sessionStorage.getItem('user') || '{}');
+  let bankAccounts = [];
+
+  const ORDER_FORM_URL = location.origin + location.pathname.replace('settings.html', '') + 'order_form.html?tenant=' + tenantId;
+  document.getElementById('orderFormUrl').textContent = ORDER_FORM_URL;
+
+  function copyOrderFormUrl() {
+    navigator.clipboard.writeText(ORDER_FORM_URL).then(() => alert('コピーしました'));
+  }
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function saveLogin() {
+    const currentPw    = document.getElementById('currentPassword').value.trim();
+    const newLoginId   = document.getElementById('newLoginId').value.trim();
+    const newPw        = document.getElementById('newPassword').value.trim();
+    const newPwConfirm = document.getElementById('newPasswordConfirm').value.trim();
+
+    if (!currentPw) { alert('現在のパスワードを入力してください'); return; }
+    if (newPw && newPw !== newPwConfirm) { alert('新しいパスワードが一致しません'); return; }
+    if (!newLoginId && !newPw) { alert('新しいログインIDまたはパスワードを入力してください'); return; }
+
+    try {
+      const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+
+      // パスワード変更（DB側bcryptで処理）
+      if (newPw) {
+        const res = await fetch(`${SB_URL}/rest/v1/rpc/change_password`, {
+          method: 'POST',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + getAccessToken(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_login_id: user.id, p_current_password: currentPw, p_new_password: newPw })
+        });
+        const ok = await res.json();
+        if (!ok?.success) { alert('現在のパスワードが正しくありません'); return; }
+        // Supabase Auth パスワードも同期
+        await sbUpdatePassword(newPw);
+      }
+
+      // ログインID変更（変更する場合のみ現在パスワードで照合）
+      if (newLoginId) {
+        const verifyRes = await fetch(`${SB_URL}/rest/v1/rpc/verify_login`, {
+          method: 'POST',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + getAccessToken(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_login_id: user.id, p_password: currentPw })
+        });
+        const verifyData = await verifyRes.json();
+        if (!verifyData[0]) { alert('現在のパスワードが正しくありません'); return; }
+
+        const patchRes = await sbFetch(`/rest/v1/accounts?login_id=eq.${encodeURIComponent(user.id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ login_id: newLoginId }),
+        });
+        if (!patchRes.ok) throw new Error('HTTP ' + patchRes.status);
+        const u = JSON.parse(sessionStorage.getItem('user') || '{}');
+        u.id = newLoginId;
+        sessionStorage.setItem('user', JSON.stringify(u));
+      }
+
+      flashSave('saveMsgLogin');
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newLoginId').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('newPasswordConfirm').value = '';
+    } catch(e) {
+      alert('変更に失敗しました: ' + e.message);
+    }
+  }
+
+  function sbFetch(path, opts = {}) {
+    return fetch(SB_URL + path, {
+      ...opts,
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + getAccessToken(),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+        ...(opts.headers || {}),
+      },
+    });
+  }
+
+  async function loadAll() {
+    try {
+      const res = await sbFetch(`/rest/v1/settings?tenant_id=eq.${tenantId}&select=*&limit=1`);
+      const data = await res.json();
+      const s = (data && data[0]) || {};
+      document.getElementById('companyName').value      = s.company_name       || '';
+      document.getElementById('companyZip').value       = s.company_zip        || '';
+      document.getElementById('companyAddress').value   = s.company_address    || '';
+      document.getElementById('companyTel').value       = s.company_tel        || '';
+      document.getElementById('companyFax').value       = s.company_fax        || '';
+      document.getElementById('companyEmail').value     = s.company_email      || '';
+      document.getElementById('companyInvoiceNo').value = s.company_invoice_no || '';
+      document.getElementById('companyPerson').value    = s.company_person     || '';
+      document.getElementById('paymentDays').value      = s.payment_days       || 30;
+      await loadBankAccounts(s);
+    } catch(e) {
+      console.error('設定読込エラー', e);
+      bankAccounts = [blankBankAccount()];
+      renderBankAccounts();
+    }
+    updatePreview();
+  }
+
+  function blankBankAccount() {
+    return { bank_name: '', bank_branch: '', bank_type: '普通', bank_number: '', bank_holder: '', bank_note: '' };
+  }
+
+  async function loadBankAccounts(settingsRow) {
+    const res = await sbFetch(`/rest/v1/tenant_bank_accounts?tenant_id=eq.${tenantId}&select=*&order=display_order.asc,created_at.asc`);
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows) && rows.length > 0) {
+        bankAccounts = rows.map(normalizeBankAccount);
+        renderBankAccounts();
+        return;
+      }
+    }
+
+    if (settingsRow?.bank_name || settingsRow?.bank_number || settingsRow?.bank_holder) {
+      bankAccounts = [normalizeBankAccount({
+        bank_name: settingsRow.bank_name,
+        bank_branch: settingsRow.bank_branch,
+        bank_type: settingsRow.bank_type,
+        bank_number: settingsRow.bank_number,
+        bank_holder: settingsRow.bank_holder,
+        bank_note: settingsRow.bank_note,
+      })];
+    } else {
+      bankAccounts = [blankBankAccount()];
+    }
+    renderBankAccounts();
+  }
+
+  function normalizeBankAccount(row = {}) {
+    return {
+      bank_name: row.bank_name || '',
+      bank_branch: row.bank_branch || '',
+      bank_type: row.bank_type || '普通',
+      bank_number: row.bank_number || '',
+      bank_holder: row.bank_holder || '',
+      bank_note: row.bank_note || '',
+    };
+  }
+
+  function renderBankAccounts() {
+    const wrap = document.getElementById('bankAccounts');
+    wrap.innerHTML = bankAccounts.map((bank, index) => `
+      <div class="bank-account">
+        <div class="bank-account-head">
+          <div class="bank-account-title">振込先 ${index + 1}</div>
+          ${bankAccounts.length > 1 ? `<button class="btn-danger" type="button" onclick="removeBankAccount(${index})">削除</button>` : ''}
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">銀行名</label>
+            <input type="text" class="form-input" data-bank-index="${index}" data-bank-field="bank_name" value="${escAttr(bank.bank_name)}" placeholder="例：北洋銀行" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">支店名</label>
+            <input type="text" class="form-input" data-bank-index="${index}" data-bank-field="bank_branch" value="${escAttr(bank.bank_branch)}" placeholder="例：札幌駅前支店" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">口座種別</label>
+            <select class="form-input" data-bank-index="${index}" data-bank-field="bank_type">
+              <option value="普通" ${bank.bank_type === '普通' ? 'selected' : ''}>普通</option>
+              <option value="当座" ${bank.bank_type === '当座' ? 'selected' : ''}>当座</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">口座番号</label>
+            <input type="text" class="form-input" data-bank-index="${index}" data-bank-field="bank_number" value="${escAttr(bank.bank_number)}" placeholder="例：1234567" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">口座名義（カタカナ）</label>
+          <input type="text" class="form-input" data-bank-index="${index}" data-bank-field="bank_holder" value="${escAttr(bank.bank_holder)}" placeholder="例：カ）メグリー" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">備考（振込手数料など）</label>
+          <input type="text" class="form-input" data-bank-index="${index}" data-bank-field="bank_note" value="${escAttr(bank.bank_note)}" placeholder="例：振込手数料はご負担ください" />
+        </div>
+      </div>
+    `).join('');
+
+    wrap.querySelectorAll('[data-bank-field]').forEach(el => {
+      el.addEventListener('input', onBankInput);
+      el.addEventListener('change', onBankInput);
+    });
+  }
+
+  function escAttr(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function onBankInput(e) {
+    const index = Number(e.target.dataset.bankIndex);
+    const field = e.target.dataset.bankField;
+    if (!bankAccounts[index]) return;
+    bankAccounts[index][field] = e.target.value;
+    updatePreview();
+  }
+
+  function addBankAccount() {
+    bankAccounts.push(blankBankAccount());
+    renderBankAccounts();
+    updatePreview();
+  }
+
+  function removeBankAccount(index) {
+    bankAccounts.splice(index, 1);
+    if (bankAccounts.length === 0) bankAccounts.push(blankBankAccount());
+    renderBankAccounts();
+    updatePreview();
+  }
+
+  async function saveCompany() {
+    const data = {
+      company_name:       document.getElementById('companyName').value.trim(),
+      company_zip:        document.getElementById('companyZip').value.trim(),
+      company_address:    document.getElementById('companyAddress').value.trim(),
+      company_tel:        document.getElementById('companyTel').value.trim(),
+      company_fax:        document.getElementById('companyFax').value.trim(),
+      company_email:      document.getElementById('companyEmail').value.trim(),
+      company_invoice_no: document.getElementById('companyInvoiceNo').value.trim(),
+      company_person:     document.getElementById('companyPerson').value.trim(),
+    };
+    try {
+      await saveSettings(data);
+      flashSave('saveMsgCompany');
+      updatePreview();
+    } catch(e) {
+      alert('保存に失敗しました: ' + e.message);
+    }
+  }
+
+  async function saveBank() {
+    try {
+      const banks = bankAccounts
+        .map(normalizeBankAccount)
+        .filter(b => b.bank_name || b.bank_branch || b.bank_number || b.bank_holder || b.bank_note);
+      const firstBank = banks[0] || blankBankAccount();
+      await saveSettings({
+        bank_name: firstBank.bank_name,
+        bank_branch: firstBank.bank_branch,
+        bank_type: firstBank.bank_type,
+        bank_number: firstBank.bank_number,
+        bank_holder: firstBank.bank_holder,
+        bank_note: firstBank.bank_note,
+        payment_days: parseInt(document.getElementById('paymentDays').value) || 30,
+      });
+      await saveBankAccounts(banks);
+      bankAccounts = banks.length > 0 ? banks : [blankBankAccount()];
+      renderBankAccounts();
+      flashSave('saveMsgBank');
+      updatePreview();
+    } catch(e) {
+      alert('保存に失敗しました: ' + e.message);
+    }
+  }
+
+  async function saveSettings(data) {
+    const res = await fetch(SB_URL + '/rest/v1/settings?on_conflict=tenant_id', {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + getAccessToken(),
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=representation',
+      },
+      body: JSON.stringify({ tenant_id: tenantId, ...data }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const saved = await res.json();
+    return saved?.[0] || null;
+  }
+
+  async function saveBankAccounts(banks) {
+    const delRes = await fetch(SB_URL + `/rest/v1/tenant_bank_accounts?tenant_id=eq.${tenantId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + getAccessToken(),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+    });
+    if (!delRes.ok) throw new Error('HTTP ' + delRes.status);
+    if (banks.length === 0) return;
+
+    const payload = banks.map((bank, index) => ({
+      tenant_id: tenantId,
+      bank_name: bank.bank_name,
+      bank_branch: bank.bank_branch,
+      bank_type: bank.bank_type || '普通',
+      bank_number: bank.bank_number,
+      bank_holder: bank.bank_holder,
+      bank_note: bank.bank_note,
+      display_order: index,
+    }));
+    const insRes = await fetch(SB_URL + '/rest/v1/tenant_bank_accounts', {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + getAccessToken(),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!insRes.ok) throw new Error('HTTP ' + insRes.status);
+  }
+
+  function flashSave(id) {
+    const el = document.getElementById(id);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  function updatePreview() {
+    const name      = document.getElementById('companyName').value;
+    const zip       = document.getElementById('companyZip').value;
+    const address   = document.getElementById('companyAddress').value;
+    const tel       = document.getElementById('companyTel').value;
+    const email     = document.getElementById('companyEmail').value;
+    const invoiceNo = document.getElementById('companyInvoiceNo').value;
+    const nameEl = document.getElementById('previewName');
+    const addrEl = document.getElementById('previewAddress');
+    nameEl.textContent = name || '（会社名未設定）';
+    const addrParts = [];
+    if (zip)       addrParts.push('〒' + zip);
+    if (address)   addrParts.push(address);
+    if (tel)       addrParts.push('TEL: ' + tel);
+    if (email)     addrParts.push(email);
+    if (invoiceNo) addrParts.push('登録番号: ' + invoiceNo);
+    addrEl.textContent = addrParts.join('  ') || '（住所・連絡先未設定）';
+    const bankEl = document.getElementById('previewBank');
+    const banks = bankAccounts.filter(b => b.bank_name || b.bank_branch || b.bank_number || b.bank_holder || b.bank_note);
+    if (banks.length === 0) {
+      bankEl.textContent = '（振込先未設定）';
+    } else {
+      bankEl.textContent = '';
+      banks.forEach((bank, index) => {
+        const block = document.createElement('div');
+        if (index > 0) block.style.marginTop = '8px';
+        const lines = [];
+        if (bank.bank_name || bank.bank_branch) lines.push([bank.bank_name, bank.bank_branch].filter(Boolean).join(' '));
+        if (bank.bank_type || bank.bank_number) lines.push((bank.bank_type || '普通') + '  ' + bank.bank_number);
+        if (bank.bank_holder) lines.push('口座名義: ' + bank.bank_holder);
+        if (bank.bank_note) lines.push(bank.bank_note);
+        lines.forEach(l => { const d = document.createElement('div'); d.textContent = l; block.appendChild(d); });
+        bankEl.appendChild(block);
+      });
+    }
+  }
+
+  ['companyName','companyZip','companyAddress','companyTel','companyFax','companyEmail','companyInvoiceNo','companyPerson',
+   'paymentDays'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updatePreview);
+  });
+
+  loadAll();
+</script>
+<script src="mobile.js"></script>
+</body>
+</html>

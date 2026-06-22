@@ -1,0 +1,771 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卸価格管理 | MeguRee</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f3ee;--surface:#fff;--border:#e2d9ce;
+  --orange:#e8630a;--orange-light:#f97316;--orange-pale:#fff4ec;
+  --green:#1e6641;--green-pale:#e8f5ee;
+  --text:#1a1208;--text-muted:#7a6a55;
+  --sidebar-bg:#1a1208;--sidebar-text:#e8d5bc;
+}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:240px;min-height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar-logo{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.sidebar-logo img{width:140px;margin-bottom:4px;display:block}
+.sidebar-logo-sub{font-size:10px;color:rgba(232,213,188,0.4);letter-spacing:2px;}
+.sidebar-nav{padding:16px 12px;flex:1}
+.nav-label{font-size:10px;color:rgba(232,213,188,0.3);letter-spacing:2px;padding:0 12px;margin-bottom:8px;margin-top:16px}
+.nav-label:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--sidebar-text);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,0.06)}
+.nav-item.active{background:var(--orange);color:#fff}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;position:sticky;top:0;z-index:50}
+.page-title{font-size:18px;font-weight:700}
+.page-sub{font-size:14px;color:var(--text-muted);margin-top:2px}
+.content{padding:28px 32px;flex:1}
+.layout{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+.card{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden}
+.card-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.search-input{padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s;width:220px}
+.search-input:focus{border-color:var(--orange);background:#fff}
+.card-title{font-size:14px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg);border-bottom:1px solid var(--border)}
+th{padding:10px 16px;text-align:left;font-size:14px;font-weight:700;color:var(--text-muted);letter-spacing:1px;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+td{padding:14px 16px;font-size:14px;vertical-align:middle}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif}
+.btn:hover{opacity:0.85}
+.btn-primary{background:var(--orange);color:#fff;width:100%;justify-content:center;margin-top:4px}
+.btn-outline{background:var(--surface);border:1.5px solid var(--orange);color:var(--orange);width:100%;justify-content:center;margin-top:8px}
+.btn-sm{padding:5px 12px;font-size:14px;border-radius:8px}
+.form-panel{padding:20px}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:14px;font-weight:600;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.5px}
+.form-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--bg);outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:var(--orange);background:#fff;box-shadow:0 0 0 3px rgba(232,99,10,0.08)}
+.preview-box{background:var(--orange-pale);border:1px solid var(--orange);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center}
+.preview-label{font-size:14px;color:var(--orange);font-weight:600;margin-bottom:4px;letter-spacing:1px}
+.preview-val{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--orange)}
+.preview-sub{font-size:14px;color:var(--text-muted);margin-top:4px}
+
+.sidebar-footer{padding:12px 12px 16px;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto}
+.logout-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:rgba(232,213,188,0.5);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none}
+.logout-item:hover{background:rgba(255,69,0,0.15);color:#ff9a7a}
+.topbar{display:flex;align-items:center;justify-content:space-between}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:18px 20px;position:relative;overflow:hidden}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--orange)}
+.kpi-card.green::after{background:var(--green)}
+.kpi-card.yellow::after{background:#d97706}
+.kpi-label{font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:6px;letter-spacing:0.5px;}
+.kpi-value{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--text);line-height:1.2}
+.kpi-sub{font-size:14px;color:var(--text-muted);margin-top:3px}
+.topbar-user{display:flex;align-items:center;gap:10px}
+.topbar-user-name{font-size:14px;font-weight:600;color:var(--text)}
+.topbar-user-role{font-size:14px;color:var(--text-muted)}
+.topbar-avatar{width:34px;height:34px;border-radius:10px;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.cust-group-row{cursor:pointer;user-select:none}
+.cust-group-row td{background:#f0ebe3;font-size:14px;font-weight:700;color:var(--text-muted);padding:9px 16px;letter-spacing:0.8px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);border-left:3px solid var(--orange)}
+.cust-group-row:hover td{background:#e8e2d8;color:var(--text)}
+.cust-toggle{float:right;font-size:14px;transition:transform 0.25s;display:inline-block;opacity:0.5}
+.cust-group-row.collapsed .cust-toggle{transform:rotate(-90deg)}
+.cust-count{display:inline-block;background:rgba(26,18,8,0.07);color:var(--text-muted);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:8px;vertical-align:middle}
+.cust-pricing-row.cust-hidden{display:none}
+/* 新規登録フォームの取引先・商品検索 */
+.search-input-inline{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--bg);outline:none;transition:border-color 0.2s;margin-bottom:6px}
+.search-input-inline:focus{border-color:var(--orange);background:#fff}
+.search-input-inline.ime-active{ime-mode:active}
+/* 検索結果リスト（受注一覧の商品検索と同じパターン） */
+.search-results-wrap{max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--surface)}
+.search-result-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;gap:12px}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:hover{background:var(--orange-pale)}
+.search-result-item.selected{background:var(--orange-pale);outline:2px solid var(--orange);outline-offset:-2px}
+.search-result-name{font-weight:600;flex:1;color:var(--text);font-size:14px}
+.search-result-price{color:var(--orange);font-weight:700;font-family:'Space Grotesk',sans-serif;white-space:nowrap;font-size:13px}
+.search-result-empty{padding:14px;color:var(--text-muted);font-size:14px;text-align:center}
+</style>
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://raw.githubusercontent.com/oshigowata-sys/order-form/main/meguree_final%20(2).svg" alt="MeguRee">
+    <div class="sidebar-logo-sub">MANAGEMENT</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">メニュー</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon">🏠</span>ダッシュボード</a>
+    <a class="nav-item" href="orders.html"><span class="icon">📋</span>納品書一覧</a>
+    <a class="nav-item" href="invoice-list.html"><span class="icon">🧾</span>請求書管理</a>
+    <a class="nav-item" href="quotation-list.html"><span class="icon">📄</span>見積書管理</a>
+    <div class="nav-label">マスタ管理</div>
+    <a class="nav-item" href="customer.html"><span class="icon">🏢</span>取引先マスタ</a>
+    <a class="nav-item" href="products.html"><span class="icon">📦</span>商品マスタ</a>
+    <a class="nav-item active" href="pricing.html"><span class="icon">💹</span>卸価格管理</a>
+    <div class="nav-label">その他</div>
+    <a class="nav-item" href="settings.html"><span class="icon">⚙️</span>設定</a>
+    <a class="nav-item" href="audit-log.html"><span class="icon">🕓</span>操作履歴</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="logout-item" href="#" onclick="signOut('login.html'); return false;"><span class="icon">🚪</span>ログアウト</a>
+  </div>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">卸価格管理</div>
+      <div class="page-sub">取引先ごとの商品卸価格を設定します（掛け率も参考表示）</div>
+    </div>
+    <div class="topbar-user">
+      <div>
+        <div class="topbar-user-name" id="topbarUserName"></div>
+        <div class="topbar-user-role" id="topbarUserRole"></div>
+      </div>
+      <div class="topbar-avatar" id="topbarAvatar">—</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">設定済み件数</div>
+        <div class="kpi-value" id="kpiTotal">—</div>
+        <div class="kpi-sub">取引先×商品の組み合わせ</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">適用取引先数</div>
+        <div class="kpi-value" id="kpiCustomers">—</div>
+        <div class="kpi-sub">卸価格設定済み</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">対象商品数</div>
+        <div class="kpi-value" id="kpiProducts">—</div>
+        <div class="kpi-sub">卸価格設定済み</div>
+      </div>
+    </div>
+    <div class="layout">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">卸価格一覧</div>
+          <input type="text" id="searchInput" class="search-input" placeholder="🔍 取引先名・商品名で検索" oninput="onSearchInput(this.value)">
+        </div>
+        <table><thead><tr>
+          <th>取引先名</th><th>商品名</th><th>上代</th><th>卸価格</th><th>掛け率（参考）</th><th></th>
+        </tr></thead>
+        <tbody id="pricingTbody"></tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title" id="formTitle">新規登録</div></div>
+        <div class="form-panel">
+          <input type="hidden" id="editKey">
+          <div class="form-group">
+            <label class="form-label">取引先</label>
+            <select class="form-input" id="fCustomer" onchange="onCustomerSelectChange()">
+              <option value="">選択してください</option>
+            </select>
+            <input type="text" class="search-input-inline ime-active" lang="ja" id="fCustomerSearch" placeholder="🔍 取引先名で絞り込み" oninput="filterCustomerOptions(this.value)" style="margin-top:6px">
+            <div id="fCustomerResults" class="search-results-wrap" style="display:none"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">商品</label>
+            <select class="form-input" id="fProduct" onchange="onProductSelectChange()">
+              <option value="">選択してください</option>
+            </select>
+            <input type="text" class="search-input-inline ime-active" lang="ja" id="fProductSearch" placeholder="🔍 商品名で絞り込み" oninput="filterProductOptions(this.value)" style="margin-top:6px">
+            <div id="fProductResults" class="search-results-wrap" style="display:none"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">卸価格（円）</label>
+            <input type="number" class="form-input" id="fWholesalePrice" min="0" step="1" placeholder="例: 455" oninput="onWholesalePriceInput()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">掛け率（参考・0〜1）</label>
+            <input type="number" class="form-input" id="fRate" min="0" max="1" step="0.001" placeholder="例: 0.65" oninput="onRateInput()">
+            <div id="fRateNote" style="display:none;font-size:12px;color:#b45309;margin-top:6px;line-height:1.4">⚠ 商品マスタで上代を設定すると掛け率が使えます（卸価格は直接入力できます）</div>
+          </div>
+          <div class="preview-box" id="previewBox" style="display:none">
+            <div class="preview-label">プレビュー</div>
+            <div class="preview-val" id="previewVal">¥0</div>
+            <div class="preview-sub" id="previewSub"></div>
+          </div>
+          <button class="btn btn-primary" onclick="savePricing()">保存する</button>
+          <button class="btn btn-outline" id="cancelBtn" style="display:none" onclick="resetForm()">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="config.js"></script>
+<script src="auth.js?v=20260510-idletimer"></script>
+<script>
+  // ===== ページガード =====
+  checkAuth();
+const userData = JSON.parse(sessionStorage.getItem('user') || '{}');
+const { tenantId, name: userName, role: userRole } = userData;
+(() => {
+  const nameEl = document.getElementById('topbarUserName');
+  const roleEl = document.getElementById('topbarUserRole');
+  const avatarEl = document.getElementById('topbarAvatar');
+  if (userName) { nameEl.textContent = userName; roleEl.textContent = userRole === 'admin' ? '管理者' : 'スタッフ'; avatarEl.textContent = userName.charAt(0); }
+})();
+
+function sbFetch(path, options = {}) {
+  return fetch(SB_URL + path, {
+    ...options,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + getAccessToken(),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+}
+
+let CUSTOMERS = [];
+let PRODUCTS  = [];
+let PRICING   = [];
+
+// 取引先グループの折りたたみ状態（ページ内メモリ・リロードでリセット）
+// MeguRee内部ルールにより sessionStorage には保存しない。
+let _pricingCollapseState = {};
+let currentSearch = '';
+
+function onSearchInput(val) {
+  currentSearch = val.trim();
+  renderPricing();
+}
+let editId = '';
+
+/* ── 初期ロード ── */
+async function loadAll() {
+  setTableLoading(true);
+  try {
+    const [custRes, prodRes, pricingRes] = await Promise.all([
+      sbFetch(`/rest/v1/customers?tenant_id=eq.${tenantId}&select=id,company_name&order=company_name`),
+      sbFetch(`/rest/v1/products?tenant_id=eq.${tenantId}&select=id,product_name,price,list_price&order=product_name`),
+      sbFetch(`/rest/v1/pricing?tenant_id=eq.${tenantId}&select=id,rate,wholesale_price,customer_id,product_id,customers(company_name),products(product_name,price,list_price)&order=created_at`)
+    ]);
+    if (!custRes.ok || !prodRes.ok || !pricingRes.ok) throw new Error('データ取得失敗');
+
+    CUSTOMERS = (await custRes.json()).map(r => ({ id: r.id, name: r.company_name }));
+    PRODUCTS  = (await prodRes.json()).map(r => ({
+      id: r.id, name: r.product_name,
+      basePrice: r.price || 0,
+      listPrice: r.list_price || 0
+    }));
+    PRICING   = (await pricingRes.json()).map(r => {
+      const basePrice = r.products?.price || 0;
+      const listPrice = r.products?.list_price || 0;
+      const rate = Number(r.rate);
+      // wholesale_price が NULL の既存データは rate × basePrice でフォールバック
+      const wholesalePrice = r.wholesale_price != null
+        ? Number(r.wholesale_price)
+        : (basePrice > 0 && rate > 0 ? Math.round(basePrice * rate) : 0);
+      return {
+        id:             r.id,
+        customer_id:    r.customer_id,
+        product_id:     r.product_id,
+        rate:           rate,
+        wholesalePrice: wholesalePrice,
+        custName:       r.customers?.company_name || '',
+        prodName:       r.products?.product_name  || '',
+        basePrice:      basePrice,
+        listPrice:      listPrice,
+      };
+    });
+
+    CUSTOMERS.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+    PRODUCTS.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+    PRICING.sort((a, b) => {
+      const c = a.custName.localeCompare(b.custName, 'ja');
+      return c !== 0 ? c : a.prodName.localeCompare(b.prodName, 'ja');
+    });
+
+    populateSelects();
+    renderPricing();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('pricingTbody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;padding:20px;color:#991b1b">データ取得に失敗しました <button onclick="loadAll()" style="margin-left:12px;padding:6px 14px;background:#dc2626;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:14px">再読み込み</button></td></tr>';
+  } finally {
+    setTableLoading(false);
+  }
+}
+
+function setTableLoading(on) {
+  if (on) document.getElementById('pricingTbody').innerHTML =
+    '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">読み込み中...</td></tr>';
+}
+
+// 検索用文字列正規化（lowercase + カタカナ→ひらがな統一）
+// 例: "ホタテ" と "ほたて" は同じキーになる
+function normalizeSearch(s) {
+  return String(s || '').toLowerCase()
+    .replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+}
+
+/* ── プルダウンの中身を全件で生成（hidden の select を JS から参照するため） ── */
+function populateSelects() {
+  const cs = document.getElementById('fCustomer');
+  const ps = document.getElementById('fProduct');
+  cs.innerHTML = '<option value="">選択してください</option>' +
+    CUSTOMERS.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  ps.innerHTML = '<option value="">選択してください</option>' +
+    PRODUCTS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+
+// 取引先の検索結果リストを描画
+function filterCustomerOptions(query) {
+  const wrap = document.getElementById('fCustomerResults');
+  const raw = (query || '').trim();
+  const q = normalizeSearch(raw);
+  // 検索文字が空 → 結果リストは非表示（プルダウン側の選択状態を保持）
+  if (!raw) {
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  const filtered = CUSTOMERS.filter(c => normalizeSearch(c.name).includes(q));
+  wrap.style.display = 'block';
+  if (filtered.length === 0) {
+    wrap.innerHTML = '<div class="search-result-empty">該当する取引先がありません</div>';
+    return;
+  }
+  const currentId = document.getElementById('fCustomer').value;
+  wrap.innerHTML = filtered.map(c => `
+    <div class="search-result-item${c.id === currentId ? ' selected' : ''}" onclick="selectCustomer('${c.id}')" title="クリックで選択">
+      <span class="search-result-name">${esc(c.name)}</span>
+    </div>
+  `).join('');
+}
+
+// 商品の検索結果リストを描画
+function filterProductOptions(query) {
+  const wrap = document.getElementById('fProductResults');
+  const raw = (query || '').trim();
+  const q = normalizeSearch(raw);
+  if (!raw) {
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  const filtered = PRODUCTS.filter(p => normalizeSearch(p.name).includes(q));
+  wrap.style.display = 'block';
+  if (filtered.length === 0) {
+    wrap.innerHTML = '<div class="search-result-empty">該当する商品がありません</div>';
+    return;
+  }
+  const currentId = document.getElementById('fProduct').value;
+  wrap.innerHTML = filtered.map(p => `
+    <div class="search-result-item${p.id === currentId ? ' selected' : ''}" onclick="selectProduct('${p.id}')" title="クリックで選択">
+      <span class="search-result-name">${esc(p.name)}</span>
+      <span class="search-result-price">¥${Number(p.basePrice || 0).toLocaleString()}</span>
+    </div>
+  `).join('');
+}
+
+// 検索結果からクリックで取引先を選択（プルダウンに反映）
+function selectCustomer(id) {
+  const c = CUSTOMERS.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('fCustomer').value = id;
+  // 検索窓と結果リストはクリア（再検索の邪魔にならないように）
+  document.getElementById('fCustomerSearch').value = '';
+  document.getElementById('fCustomerResults').style.display = 'none';
+  document.getElementById('fCustomerResults').innerHTML = '';
+  updatePreview();
+}
+
+// 検索結果からクリックで商品を選択（プルダウンに反映）
+function selectProduct(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('fProduct').value = id;
+  document.getElementById('fProductSearch').value = '';
+  document.getElementById('fProductResults').style.display = 'none';
+  document.getElementById('fProductResults').innerHTML = '';
+  updatePreview();
+}
+
+// プルダウンから直接選択した場合：検索窓・結果リストをクリアしてプレビュー更新
+function onCustomerSelectChange() {
+  document.getElementById('fCustomerSearch').value = '';
+  document.getElementById('fCustomerResults').style.display = 'none';
+  document.getElementById('fCustomerResults').innerHTML = '';
+  updatePreview();
+}
+
+function onProductSelectChange() {
+  document.getElementById('fProductSearch').value = '';
+  document.getElementById('fProductResults').style.display = 'none';
+  document.getElementById('fProductResults').innerHTML = '';
+  // 商品が変わったら、上代の有無で掛け率入力欄の状態を切替
+  applyListPriceState();
+  // すでに入っている卸価格に対する掛け率を再計算
+  onWholesalePriceInput();
+}
+
+// HTML エスケープ
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+function updateKPIs() {
+  const uniqueCustomers = new Set(PRICING.map(p => p.customer_id)).size;
+  const uniqueProducts = new Set(PRICING.map(p => p.product_id)).size;
+  document.getElementById('kpiTotal').textContent = PRICING.length;
+  document.getElementById('kpiCustomers').textContent = uniqueCustomers;
+  document.getElementById('kpiProducts').textContent = uniqueProducts;
+}
+
+/* ── 一覧描画 ── */
+function renderPricing() {
+  updateKPIs();
+  if (PRICING.length === 0) {
+    document.getElementById('pricingTbody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">卸価格の登録がありません</td></tr>';
+    return;
+  }
+  const q = currentSearch.toLowerCase();
+  const list = q ? PRICING.filter(p => p.custName.toLowerCase().includes(q) || p.prodName.toLowerCase().includes(q)) : PRICING;
+  if (list.length === 0) {
+    document.getElementById('pricingTbody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">該当する卸価格が見つかりません</td></tr>';
+    return;
+  }
+
+  function rowHtml(p) {
+    // 卸価格は wholesale_price を直接表示（基本単価・上代を変えても変わらない）
+    const wholesale = p.wholesalePrice > 0 ? p.wholesalePrice : null;
+    // 掛け率は「卸価格 ÷ 上代」で計算（業務上正しい掛け率）。上代未設定なら「—」
+    const refRate = (p.listPrice > 0 && wholesale != null)
+      ? (wholesale / p.listPrice * 100).toFixed(1) + '%'
+      : '—';
+    return `<td style="font-weight:600">${p.custName}</td>
+      <td style="font-size:14px;color:var(--text-muted)">${p.prodName}</td>
+      <td style="font-family:'Space Grotesk',sans-serif;color:var(--text-muted)">${p.listPrice > 0 ? '¥'+p.listPrice.toLocaleString() : '—'}</td>
+      <td style="font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--orange)">${wholesale !== null ? '¥'+wholesale.toLocaleString() : '—'}</td>
+      <td><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;color:var(--text-muted)">${refRate}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" style="background:var(--bg);border:1px solid var(--border);color:var(--text)" onclick="editPricing('${p.id}')">編集</button>
+        <button class="btn btn-sm" style="background:#fff0f0;border:1px solid #fca5a5;color:#dc2626;margin-left:4px" onclick="deletePricing('${p.id}')">削除</button>
+      </td>`;
+  }
+
+  if (q) {
+    document.getElementById('pricingTbody').innerHTML = list.map(p => `<tr>${rowHtml(p)}</tr>`).join('');
+    return;
+  }
+
+  const groups = {};
+  list.forEach(p => { if (!groups[p.custName]) groups[p.custName] = []; groups[p.custName].push(p); });
+  const custKeys = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ja'));
+
+  let html = '';
+  custKeys.forEach((cust, idx) => {
+    const cgId = 'pcg' + idx;
+    html += `<tr class="cust-group-row" data-cgid="${cgId}" data-custname="${cust.replace(/"/g,'&quot;')}" onclick="toggleCustGroup('${cgId}')">
+      <td colspan="6">${cust}<span class="cust-count">${groups[cust].length}</span><span class="cust-toggle">▼</span></td>
+    </tr>`;
+    groups[cust].forEach(p => {
+      html += `<tr class="cust-pricing-row" data-cg="${cgId}">${rowHtml(p)}</tr>`;
+    });
+  });
+  document.getElementById('pricingTbody').innerHTML = html;
+
+  // デフォルトで全取引先グループ折りたたみ。ユーザーが明示的に開いた（state===false）グループのみ展開状態を維持。
+  // 折りたたみ状態は MeguRee 内部ルール（sessionStorage 許可リスト外）のためメモリ内で保持。
+  // ページリロードで状態はリセットされる（＝再びすべて折りたたみ表示）。
+  custKeys.forEach((cust, idx) => {
+    // 明示的に開いている場合のみ折りたたまない
+    if (_pricingCollapseState[cust] === false) return;
+    const cgId = 'pcg' + idx;
+    const header = document.querySelector(`.cust-group-row[data-cgid="${cgId}"]`);
+    const rows = document.querySelectorAll(`.cust-pricing-row[data-cg="${cgId}"]`);
+    if (header) { header.classList.add('collapsed'); rows.forEach(r => r.classList.add('cust-hidden')); }
+  });
+}
+
+function toggleCustGroup(cgId) {
+  const header = document.querySelector(`.cust-group-row[data-cgid="${cgId}"]`);
+  const rows = document.querySelectorAll(`.cust-pricing-row[data-cg="${cgId}"]`);
+  const collapsed = header.classList.toggle('collapsed');
+  rows.forEach(r => r.classList.toggle('cust-hidden', collapsed));
+  const custName = header.dataset.custname;
+  // 明示的に開いた = state=false で記憶／閉じた = state を消してデフォルト挙動に戻す
+  if (collapsed) { delete _pricingCollapseState[custName]; } else { _pricingCollapseState[custName] = false; }
+}
+
+/* ── 双方向入力：卸価格⇄掛け率（上代ベース） ── */
+let _suppressSync = false; // 連動更新時の再入防止
+
+// 選択中の商品の上代が未設定なら掛け率入力欄を無効化＋注記表示
+function applyListPriceState() {
+  const pid = document.getElementById('fProduct').value;
+  const prod = PRODUCTS.find(x => x.id === pid);
+  const hasListPrice = !!(prod && prod.listPrice > 0);
+  const rateInput = document.getElementById('fRate');
+  const note = document.getElementById('fRateNote');
+  if (pid && !hasListPrice) {
+    rateInput.disabled = true;
+    rateInput.value = '';
+    rateInput.placeholder = '上代未設定のため計算不可';
+    note.style.display = 'block';
+  } else {
+    rateInput.disabled = false;
+    rateInput.placeholder = '例: 0.65';
+    note.style.display = 'none';
+  }
+}
+
+// 卸価格を入力された → 掛け率を逆算して表示（上代ベース）
+function onWholesalePriceInput() {
+  if (_suppressSync) return;
+  const pid = document.getElementById('fProduct').value;
+  const wholesale = parseFloat(document.getElementById('fWholesalePrice').value);
+  const prod = PRODUCTS.find(x => x.id === pid);
+  if (prod && prod.listPrice > 0 && wholesale > 0) {
+    const rate = wholesale / prod.listPrice;
+    _suppressSync = true;
+    document.getElementById('fRate').value = Number(rate.toFixed(3));
+    _suppressSync = false;
+  } else if (!wholesale) {
+    _suppressSync = true;
+    document.getElementById('fRate').value = '';
+    _suppressSync = false;
+  }
+  updatePreview();
+}
+
+// 掛け率を入力された → 卸価格を計算して表示（上代ベース）
+function onRateInput() {
+  if (_suppressSync) return;
+  const pid = document.getElementById('fProduct').value;
+  const rate = parseFloat(document.getElementById('fRate').value);
+  const prod = PRODUCTS.find(x => x.id === pid);
+  if (prod && prod.listPrice > 0 && rate > 0) {
+    const wholesale = Math.round(prod.listPrice * rate);
+    _suppressSync = true;
+    document.getElementById('fWholesalePrice').value = wholesale;
+    _suppressSync = false;
+  } else if (!rate) {
+    _suppressSync = true;
+    document.getElementById('fWholesalePrice').value = '';
+    _suppressSync = false;
+  }
+  updatePreview();
+}
+
+// 取引先・商品が変わったとき：プレビュー更新
+function updatePreview() {
+  const pid = document.getElementById('fProduct').value;
+  const wholesale = parseFloat(document.getElementById('fWholesalePrice').value);
+  const rate = parseFloat(document.getElementById('fRate').value);
+  const box  = document.getElementById('previewBox');
+  const prod = PRODUCTS.find(x => x.id === pid);
+  if (!prod || (!wholesale && !rate)) { box.style.display = 'none'; return; }
+
+  if (prod.listPrice > 0) {
+    // 上代がある → 上代ベースで掛け率を表示
+    const effWholesale = wholesale > 0 ? wholesale
+      : (rate > 0 ? Math.round(prod.listPrice * rate) : 0);
+    const effRate = wholesale > 0 ? (wholesale / prod.listPrice)
+      : (rate > 0 ? rate : 0);
+    document.getElementById('previewVal').textContent = '卸価格 ¥' + effWholesale.toLocaleString();
+    document.getElementById('previewSub').textContent =
+      `上代 ¥${prod.listPrice.toLocaleString()}　・　掛け率 ${(effRate*100).toFixed(1)}%`;
+    box.style.display = 'block';
+  } else if (wholesale > 0) {
+    // 上代がない → 卸価格のみ表示・掛け率は出さない
+    document.getElementById('previewVal').textContent = '卸価格 ¥' + wholesale.toLocaleString();
+    document.getElementById('previewSub').textContent = '※ 上代未設定のため掛け率は計算できません';
+    box.style.display = 'block';
+  } else { box.style.display = 'none'; }
+}
+
+/* ── 編集開始 ── */
+function editPricing(id) {
+  const p = PRICING.find(x => x.id === id);
+  if (!p) return;
+  editId = id;
+  document.getElementById('editKey').value          = id;
+  document.getElementById('fCustomer').value         = p.customer_id;
+  document.getElementById('fProduct').value          = p.product_id;
+  // 卸価格を直接セット（双方向連動を抑制してから rate も整合させる）
+  _suppressSync = true;
+  document.getElementById('fWholesalePrice').value = p.wholesalePrice > 0 ? p.wholesalePrice : '';
+  // 掛け率は上代から逆算した参考値を表示（上代がない場合は空欄）
+  const refRate = (p.listPrice > 0 && p.wholesalePrice > 0)
+    ? Number((p.wholesalePrice / p.listPrice).toFixed(3))
+    : 0;
+  document.getElementById('fRate').value = refRate > 0 ? refRate : '';
+  _suppressSync = false;
+  // 商品の上代有無で掛け率入力欄の状態を切替
+  applyListPriceState();
+  // 検索窓と結果リストはクリア（プルダウンが選択状態を表示する）
+  document.getElementById('fCustomerSearch').value = '';
+  document.getElementById('fProductSearch').value  = '';
+  document.getElementById('fCustomerResults').style.display = 'none';
+  document.getElementById('fProductResults').style.display  = 'none';
+  document.getElementById('fCustomerResults').innerHTML = '';
+  document.getElementById('fProductResults').innerHTML = '';
+  document.getElementById('formTitle').textContent   = '卸価格を編集';
+  document.getElementById('cancelBtn').style.display = '';
+  updatePreview();
+  document.querySelector('.card:last-child').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ── フォームリセット ── */
+function resetForm() {
+  editId = '';
+  document.getElementById('editKey').value          = '';
+  document.getElementById('fCustomer').value         = '';
+  document.getElementById('fProduct').value          = '';
+  document.getElementById('fWholesalePrice').value   = '';
+  document.getElementById('fRate').value             = '';
+  document.getElementById('fCustomerSearch').value   = '';
+  document.getElementById('fProductSearch').value    = '';
+  document.getElementById('fCustomerResults').style.display = 'none';
+  document.getElementById('fProductResults').style.display  = 'none';
+  document.getElementById('fCustomerResults').innerHTML = '';
+  document.getElementById('fProductResults').innerHTML = '';
+  document.getElementById('formTitle').textContent   = '新規登録';
+  document.getElementById('cancelBtn').style.display = 'none';
+  document.getElementById('previewBox').style.display = 'none';
+  // 掛け率入力欄を通常状態に戻す
+  const rateInput = document.getElementById('fRate');
+  rateInput.disabled = false;
+  rateInput.placeholder = '例: 0.65';
+  document.getElementById('fRateNote').style.display = 'none';
+}
+
+async function writeAuditLog(action, recordId, recordLabel, oldValues, newValues) {
+  try {
+    await sbFetch('/rest/v1/audit_log', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        tenant_id: tenantId, user_name: userName || '—',
+        action, table_name: 'pricing',
+        record_id: String(recordId || ''), record_label: recordLabel || '',
+        old_values: oldValues || null, new_values: newValues || null,
+      })
+    });
+  } catch(e) { console.warn('監査ログ書き込み失敗:', e); }
+}
+
+/* ── 削除 ── */
+async function deletePricing(id) {
+  const p = PRICING.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`「${p.custName} × ${p.prodName}」の掛け率を削除しますか？`)) return;
+  try {
+    const res = await sbFetch('/rest/v1/pricing?id=eq.' + id, { method: 'DELETE' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    await writeAuditLog('delete', id, `${p.custName} × ${p.prodName}`,
+      { customer_id: p.customer_id, product_id: p.product_id, wholesale_price: p.wholesalePrice, rate: p.rate, custName: p.custName, prodName: p.prodName, basePrice: p.basePrice },
+      null
+    );
+    await loadAll();
+  } catch(e) {
+    console.error(e);
+    alert('削除に失敗しました');
+  }
+}
+
+/* ── 保存（新規 or 更新） ── */
+async function savePricing() {
+  const id         = document.getElementById('editKey').value;
+  const customerId = document.getElementById('fCustomer').value;
+  const productId  = document.getElementById('fProduct').value;
+  const wholesale  = parseInt(document.getElementById('fWholesalePrice').value, 10);
+  if (!customerId || !productId || isNaN(wholesale)) { alert('取引先・商品・卸価格をすべて入力してください'); return; }
+  if (wholesale <= 0) { alert('卸価格は1円以上で入力してください'); return; }
+
+  const prod = PRODUCTS.find(p => p.id === productId);
+  if (!prod) { alert('商品が見つかりません'); return; }
+  // 掛け率は上代から逆算するのが業務的に正しい。
+  // 上代未設定の場合は rate カラム（NOT NULL）の保存のため基本単価でフォールバック。
+  let rate;
+  if (prod.listPrice > 0) {
+    rate = wholesale / prod.listPrice;
+    if (rate > 1) {
+      if (!confirm(`卸価格 ¥${wholesale.toLocaleString()} は上代 ¥${prod.listPrice.toLocaleString()} を超えています。このまま保存しますか？`)) return;
+    }
+  } else if (prod.basePrice > 0) {
+    rate = wholesale / prod.basePrice;
+  } else {
+    alert('選択した商品は基本単価も上代も設定されていません。商品マスタを先に設定してください。');
+    return;
+  }
+
+  const btn = document.querySelector('.btn-primary');
+  btn.disabled = true; btn.textContent = '保存中...';
+
+  const oldPricing = id ? PRICING.find(x => x.id === id) : null;
+  const custName = CUSTOMERS.find(c => c.id === customerId)?.name || '';
+  const prodName = prod?.name || '';
+  const label = `${custName} × ${prodName}`;
+
+  try {
+    const payload = {
+      customer_id: customerId,
+      product_id: productId,
+      rate: Number(rate.toFixed(6)), // 端数を持たせて再現性を確保
+      wholesale_price: wholesale,
+      tenant_id: tenantId
+    };
+    if (id) {
+      const res = await sbFetch('/rest/v1/pricing?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      await writeAuditLog('update', id, label,
+        oldPricing ? { wholesale_price: oldPricing.wholesalePrice, rate: oldPricing.rate, custName: oldPricing.custName, prodName: oldPricing.prodName } : null,
+        { wholesale_price: wholesale, rate: Number(rate.toFixed(3)), custName, prodName }
+      );
+    } else {
+      const res = await sbFetch('/rest/v1/pricing', { method: 'POST', body: JSON.stringify(payload) });
+      if (!res.ok) {
+        const err = await res.json();
+        if (err.code === '23505') { alert('この取引先・商品の組み合わせはすでに登録されています'); return; }
+        throw new Error('HTTP ' + res.status);
+      }
+      const created = await res.json();
+      const newId = Array.isArray(created) ? created[0]?.id : created?.id;
+      await writeAuditLog('create', newId || '', label,
+        null,
+        { wholesale_price: wholesale, rate: Number(rate.toFixed(3)), custName, prodName, basePrice: prod?.basePrice || 0 }
+      );
+    }
+    resetForm();
+    await loadAll();
+  } catch(e) {
+    console.error(e);
+    alert('保存に失敗しました');
+  } finally {
+    btn.disabled = false; btn.textContent = '保存する';
+  }
+}
+
+loadAll();
+</script>
+<script src="mobile.js"></script>
+</body>
+</html>

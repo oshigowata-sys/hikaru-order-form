@@ -1,0 +1,982 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>請求書管理 | MeguRee</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f3ee;--surface:#fff;--border:#e2d9ce;
+  --orange:#e8630a;--orange-light:#f97316;--orange-pale:#fff4ec;
+  --green:#1e6641;--green-pale:#e8f5ee;
+  --text:#1a1208;--text-muted:#7a6a55;
+  --sidebar-bg:#1a1208;--sidebar-text:#e8d5bc;
+}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:240px;min-height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar-logo{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.sidebar-logo img{width:140px;margin-bottom:4px;display:block}
+.sidebar-logo-sub{font-size:10px;color:rgba(232,213,188,0.4);letter-spacing:2px;}
+.sidebar-nav{padding:16px 12px;flex:1}
+.nav-label{font-size:10px;color:rgba(232,213,188,0.3);letter-spacing:2px;padding:0 12px;margin-bottom:8px;margin-top:16px}
+.nav-label:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--sidebar-text);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,0.06)}
+.nav-item.active{background:var(--orange);color:#fff}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-size:18px;font-weight:700}
+.page-sub{font-size:14px;color:var(--text-muted);margin-top:2px}
+.content{padding:28px 32px;flex:1}
+.card{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden}
+.search-input{padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s;width:220px}
+.search-input:focus{border-color:var(--orange);background:#fff}
+.table-wrapper{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg);border-bottom:1px solid var(--border)}
+th{padding:10px 16px;text-align:left;font-size:14px;font-weight:700;color:var(--text-muted);letter-spacing:1px;white-space:nowrap}
+tbody tr{background:var(--bg);border-bottom:1px solid var(--border);transition:background 0.15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f0ebe3}
+td{padding:13px 16px;font-size:14px;vertical-align:middle;white-space:nowrap}
+.num-right{text-align:right}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif}
+.btn:hover{opacity:0.85}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text-muted)}
+.btn-sm{padding:5px 12px;font-size:14px;border-radius:8px}
+/* status badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:14px;font-weight:600}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.badge-issued{background:var(--green-pale);color:var(--green);border:1px solid rgba(30,102,65,0.2)}
+.badge-issued::before{background:var(--green)}
+.badge-pending{background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,99,10,0.2)}
+.badge-pending::before{background:var(--orange)}
+.badge-inprogress{background:#f3f4f6;color:#6b7280;border:1px solid rgba(107,114,128,0.2)}
+.badge-inprogress::before{background:#9ca3af}
+/* filter bar */
+.filter-bar{display:flex;align-items:center;gap:8px;padding:14px 20px;border-bottom:1px solid var(--border)}
+.filter-btn{padding:5px 14px;border:1.5px solid var(--border);border-radius:20px;background:none;cursor:pointer;font-size:14px;font-weight:600;color:var(--text-muted);font-family:'Noto Sans JP',sans-serif;transition:all 0.15s}
+.filter-btn:hover{border-color:var(--orange);color:var(--orange)}
+.filter-btn.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:18px 20px;position:relative;overflow:hidden}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--orange)}
+.kpi-card.green::after{background:var(--green)}
+.kpi-card.yellow::after{background:#d97706}
+.kpi-card.blue::after{background:#3b82f6}
+.kpi-label{font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:6px;letter-spacing:0.5px;}
+.kpi-value{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:var(--text);line-height:1.2}
+.kpi-value.warn{color:var(--orange)}
+.kpi-value.green{color:var(--green)}
+.kpi-sub{font-size:14px;color:var(--text-muted);margin-top:3px}
+/* topbar user */
+.topbar-user{display:flex;align-items:center;gap:10px}
+.topbar-user-name{font-size:14px;font-weight:600;color:var(--text)}
+.topbar-user-role{font-size:14px;color:var(--text-muted)}
+.topbar-avatar{width:34px;height:34px;border-radius:10px;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.sidebar-footer{padding:12px 12px 16px;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto}
+.logout-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:rgba(232,213,188,0.5);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none}
+.logout-item:hover{background:rgba(255,69,0,0.15);color:#ff9a7a}
+/* modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:flex-start;justify-content:center;padding-top:80px;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px;width:480px;max-width:95vw;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.18)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--bg)}
+.modal-body{padding:20px 24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--bg)}
+.form-label{font-size:14px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;display:block;margin-bottom:5px}
+.form-input{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--bg);outline:none;width:100%}
+.form-input:focus{border-color:var(--orange);background:#fff}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+/* toast */
+.toast{position:fixed;bottom:28px;right:28px;background:#1a1208;color:#fff;padding:13px 20px;border-radius:12px;font-size:14px;font-weight:500;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.25);opacity:0;transform:translateY(8px);transition:opacity 0.25s,transform 0.25s;pointer-events:none;font-family:'Noto Sans JP',sans-serif}
+.toast.show{opacity:1;transform:translateY(0)}
+/* in-progress row muted */
+tr.row-inprogress td{color:var(--text-muted)}
+</style>
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://raw.githubusercontent.com/oshigowata-sys/order-form/main/meguree_final%20(2).svg" alt="MeguRee">
+    <div class="sidebar-logo-sub">MANAGEMENT</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">メニュー</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon">🏠</span>ダッシュボード</a>
+    <a class="nav-item" href="orders.html"><span class="icon">📋</span>納品書一覧</a>
+    <a class="nav-item active" href="invoice-list.html"><span class="icon">🧾</span>請求書管理</a>
+    <a class="nav-item" href="quotation-list.html"><span class="icon">📄</span>見積書管理</a>
+    <div class="nav-label">マスタ管理</div>
+    <a class="nav-item" href="customer.html"><span class="icon">🏢</span>取引先マスタ</a>
+    <a class="nav-item" href="products.html"><span class="icon">📦</span>商品マスタ</a>
+    <a class="nav-item" href="pricing.html"><span class="icon">💹</span>卸価格管理</a>
+    <div class="nav-label">その他</div>
+    <a class="nav-item" href="settings.html"><span class="icon">⚙️</span>設定</a>
+    <a class="nav-item" href="audit-log.html"><span class="icon">🕓</span>操作履歴</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="logout-item" href="#" onclick="signOut('login.html'); return false;"><span class="icon">🚪</span>ログアウト</a>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">請求書管理</div>
+      <div class="page-sub">締め請求の発行・管理を行います</div>
+    </div>
+    <div class="topbar-user">
+      <div>
+        <div class="topbar-user-name" id="topbarUserName"></div>
+        <div class="topbar-user-role" id="topbarUserRole"></div>
+      </div>
+      <div class="topbar-avatar" id="topbarAvatar">—</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">未発行件数</div>
+        <div class="kpi-value warn" id="kpiPending">—</div>
+        <div class="kpi-sub">請求待ち</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">発行済み</div>
+        <div class="kpi-value green" id="kpiIssued">—</div>
+        <div class="kpi-sub">件</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">未発行合計（税込）</div>
+        <div class="kpi-value" id="kpiPendingAmount">—</div>
+        <div class="kpi-sub">請求予定額</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">発行済み合計（税込）</div>
+        <div class="kpi-value" id="kpiIssuedAmount">—</div>
+        <div class="kpi-sub">累計請求額</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">全件</button>
+        <button class="filter-btn" data-filter="pending">未発行</button>
+        <button class="filter-btn" data-filter="issued">発行済み</button>
+        <select id="monthFilter" onchange="onMonthFilterChange(this.value)"
+          style="padding:5px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);cursor:pointer;outline:none;font-weight:600">
+          <option value="all">📅 全期間</option>
+        </select>
+        <div style="margin-left:auto">
+          <input type="text" id="searchInput" class="search-input" placeholder="🔍 取引先名で検索" oninput="onSearchInput(this.value)">
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr>
+            <th onclick="setSort('customer')" style="cursor:pointer;user-select:none">取引先名<span class="sarrow" data-k="customer"></span></th>
+            <th onclick="setSort('period')" style="cursor:pointer;user-select:none">対象期間<span class="sarrow" data-k="period"></span></th>
+            <th class="num-right" onclick="setSort('orders')" style="cursor:pointer;user-select:none">受注件数<span class="sarrow" data-k="orders"></span></th>
+            <th class="num-right" onclick="setSort('total')" style="cursor:pointer;user-select:none">税込合計<span class="sarrow" data-k="total"></span></th>
+            <th onclick="setSort('issuedDate')" style="cursor:pointer;user-select:none">発行日<span class="sarrow" data-k="issuedDate"></span></th>
+            <th onclick="setSort('status')" style="cursor:pointer;user-select:none">ステータス<span class="sarrow" data-k="status"></span></th>
+            <th></th>
+          </tr></thead>
+          <tbody id="unifiedTbody"><tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">読み込み中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 発行モーダル -->
+<div class="overlay" id="issueModalOverlay" onclick="if(event.target===this)closeIssueModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="issueModalTitle">請求書発行</div>
+      <button class="modal-close" onclick="closeIssueModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="interimWarning" style="display:none;background:#ffe4cc;border:1.5px solid var(--orange);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:14px;font-weight:600;color:#9a3a00;line-height:1.6">
+        ⚠️ <strong>途中発行</strong>です。本日以降に届いた注文は今月末に再度発行が必要になります。
+      </div>
+      <div style="margin-bottom:16px;font-size:14px">
+        取引先：<strong id="issueCustomerName"></strong>
+      </div>
+      <div class="form-row">
+        <div>
+          <label class="form-label">期間開始日</label>
+          <input type="date" class="form-input" id="issuePeriodStart">
+        </div>
+        <div>
+          <label class="form-label">期間終了日</label>
+          <input type="date" class="form-input" id="issuePeriodEnd">
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <label class="form-label">帳票全体の備考（請求書フッターに表示・任意）</label>
+        <textarea class="form-input" id="issueNotes" maxlength="200" placeholder="（任意）" style="min-height:60px;resize:vertical;width:100%"></textarea>
+      </div>
+      <div id="issuePreview" style="padding:12px;background:var(--bg);border-radius:8px;font-size:14px;color:var(--text-muted);margin-top:14px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeIssueModal()">キャンセル</button>
+      <button class="btn btn-primary" id="issueConfirmBtn" onclick="confirmIssue()">発行する</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="auth.js?v=20260510-idletimer"></script>
+<script>
+checkAuth();
+
+const userData = JSON.parse(sessionStorage.getItem('user') || '{}');
+const { tenantId, name: userName, role: userRole } = userData;
+
+(() => {
+  const nameEl = document.getElementById('topbarUserName');
+  const roleEl = document.getElementById('topbarUserRole');
+  const avatarEl = document.getElementById('topbarAvatar');
+  if (userName) {
+    nameEl.textContent = userName;
+    roleEl.textContent = userRole === 'admin' ? '管理者' : 'スタッフ';
+    avatarEl.textContent = userName.charAt(0);
+  }
+})();
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function sbFetch(path, options = {}) {
+  return fetch(SB_URL + path, {
+    ...options,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + getAccessToken(),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+}
+
+// ── toast ──
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ── 統合データ ──
+let _allRows = [];
+let _renderedRows = [];
+let currentFilter = 'all';
+let currentSearch = '';
+let currentMonth = 'all';
+// 見出しクリックの並び替え。既定(key=null)は業務並び（未発行→進行中→発行済み）を保持。
+let currentSort = { key: null, dir: 'asc' };
+const SORT_TEXT_KEYS = ['customer', 'period', 'issuedDate'];
+const STATUS_RANK = { pending: 0, in_progress: 1, issued: 2 };
+function sortValue(r, key) {
+  if (key === 'period') return r.periodEnd || '';
+  if (key === 'total') return (r.excl || 0) + (r.tax || 0);
+  if (key === 'status') return STATUS_RANK[r.status] != null ? STATUS_RANK[r.status] : 9;
+  if (key === 'issuedDate') return r.issuedDate || '';
+  return r[key];
+}
+function setSort(key) {
+  if (currentSort.key === key) currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  else { currentSort.key = key; currentSort.dir = (key === 'customer') ? 'asc' : 'desc'; }
+  renderAll();
+}
+function updateSortIndicators() {
+  document.querySelectorAll('.sarrow').forEach(s => {
+    s.textContent = (s.dataset.k === currentSort.key) ? (currentSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  });
+}
+
+function onSearchInput(val) {
+  currentSearch = val.trim();
+  renderAll();
+}
+
+function onMonthFilterChange(val) {
+  currentMonth = val;
+  renderAll();
+}
+
+// 月ラベル整形: "2026-04" → "2026年4月"
+function formatMonthLabel(ym) {
+  const [y, m] = ym.split('-');
+  return `${y}年${parseInt(m, 10)}月`;
+}
+
+// _allRows から月別の選択肢を生成してセレクトに反映
+function populateMonthFilter() {
+  const sel = document.getElementById('monthFilter');
+  if (!sel) return;
+  const months = new Set();
+  _allRows.forEach(r => {
+    if (r.periodEnd) months.add(r.periodEnd.slice(0, 7));
+  });
+  const sorted = Array.from(months).sort().reverse();
+  const prev = currentMonth;
+  sel.innerHTML = '<option value="all">📅 全期間</option>' +
+    sorted.map(ym => `<option value="${ym}">${formatMonthLabel(ym)} 請求</option>`).join('');
+  // 現在の選択が選択肢に存在しなければ "all" に戻す
+  if (prev !== 'all' && !sorted.includes(prev)) {
+    currentMonth = 'all';
+    sel.value = 'all';
+  } else {
+    sel.value = prev;
+  }
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderAll();
+  });
+});
+
+// ── 締め日から完了済み期間・進行中期間を算出 ──
+function calcBillingPeriods(closingDay, today = new Date()) {
+  const cd = closingDay || 31;
+  const todayStr   = today.toISOString().slice(0, 10);
+  const todayDay   = today.getDate();
+  const todayMonth = today.getMonth();
+  const todayYear  = today.getFullYear();
+
+  let endYear, endMonth;
+  if (todayDay <= cd) {
+    endMonth = todayMonth - 1;
+    endYear  = todayYear;
+    if (endMonth < 0) { endMonth = 11; endYear = todayYear - 1; }
+  } else {
+    endMonth = todayMonth;
+    endYear  = todayYear;
+  }
+  const daysInEnd = new Date(endYear, endMonth + 1, 0).getDate();
+  const endDay    = Math.min(cd, daysInEnd);
+  const endD      = new Date(endYear, endMonth, endDay);
+
+  let prevMonth = endMonth - 1, prevYear = endYear;
+  if (prevMonth < 0) { prevMonth = 11; prevYear = endYear - 1; }
+  const daysInPrev   = new Date(prevYear, prevMonth + 1, 0).getDate();
+  const prevCloseDay = Math.min(cd, daysInPrev);
+  const startD = new Date(prevYear, prevMonth, prevCloseDay + 1);
+
+  const inProgressStart = new Date(endD);
+  inProgressStart.setDate(inProgressStart.getDate() + 1);
+
+  return [
+    { periodStart: startD.toISOString().slice(0,10), periodEnd: endD.toISOString().slice(0,10), isInProgress: false },
+    { periodStart: inProgressStart.toISOString().slice(0,10), periodEnd: todayStr, isInProgress: true },
+  ];
+}
+
+// ── 全データ読み込み ──
+async function loadAll() {
+  document.getElementById('unifiedTbody').innerHTML =
+    '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">読み込み中...</td></tr>';
+  try {
+    const today = new Date();
+    const [ordersRes, invoicesRes] = await Promise.all([
+      sbFetch(`/rest/v1/orders?tenant_id=eq.${tenantId}&select=id,order_date,customers(id,company_name,closing_day),order_items(quantity,unit_price,products(is_food))&order=order_date.asc`),
+      sbFetch(`/rest/v1/invoices?tenant_id=eq.${tenantId}&superseded_at=is.null&select=id,invoice_number,customer_id,period_start,period_end,issued_date,total_excl_tax,tax_amount,total_incl_tax,paid_amount,is_interim,cancelled_at,customers(company_name)&order=issued_date.desc`)
+    ]);
+    if (!ordersRes.ok || !invoicesRes.ok) throw new Error('データ取得失敗');
+    const [orders, invoices] = await Promise.all([ordersRes.json(), invoicesRes.json()]);
+
+    // 発行済みセット（customer_id:period_end）— 取消済は除外して再発行可能にする
+    const invoicedSet = new Set(invoices.filter(i => !i.cancelled_at).map(i => `${i.customer_id}:${i.period_end}`));
+
+    // 発行済み請求書の受注件数集計（顧客×期間で該当ordersをカウント）
+    const invoicePeriodsByCustomer = {};
+    invoices.forEach(inv => {
+      if (!invoicePeriodsByCustomer[inv.customer_id]) invoicePeriodsByCustomer[inv.customer_id] = [];
+      invoicePeriodsByCustomer[inv.customer_id].push({
+        start: inv.period_start, end: inv.period_end, key: `${inv.customer_id}:${inv.period_end}`
+      });
+    });
+    const issuedOrdersCount = {};
+    orders.forEach(o => {
+      const cid = o.customers?.id;
+      if (!cid) return;
+      const periods = invoicePeriodsByCustomer[cid] || [];
+      periods.forEach(p => {
+        if (o.order_date >= p.start && o.order_date <= p.end) {
+          issuedOrdersCount[p.key] = (issuedOrdersCount[p.key] || 0) + 1;
+        }
+      });
+    });
+
+    // 発行済み行
+    const issuedRows = invoices.map(inv => ({
+      status: 'issued',
+      invoiceId: inv.id || '',
+      customer: inv.customers?.company_name || '',
+      customerId: inv.customer_id || '',
+      periodStart: inv.period_start || '',
+      periodEnd: inv.period_end || '',
+      orders: issuedOrdersCount[`${inv.customer_id}:${inv.period_end}`] || 0,
+      excl: inv.total_excl_tax || 0,
+      tax: inv.tax_amount || 0,
+      invoiceNumber: inv.invoice_number || '',
+      issuedDate: (inv.issued_date || '').slice(0,10),
+      paidAmount: inv.paid_amount != null ? inv.paid_amount : null,
+      cancelled: !!inv.cancelled_at,
+    }));
+
+    // 未発行・進行中行の集計
+    const map = {};
+    orders.forEach(o => {
+      const cid = o.customers?.id;
+      if (!cid) return;
+      const cd = o.customers.closing_day || 31;
+      calcBillingPeriods(cd, today).forEach(({ periodStart, periodEnd, isInProgress }) => {
+        if (o.order_date < periodStart || o.order_date > periodEnd) return;
+        if (invoicedSet.has(`${cid}:${periodEnd}`)) return;
+        const key = `${cid}:${periodEnd}`;
+        if (!map[key]) {
+          map[key] = {
+            status: isInProgress ? 'in_progress' : 'pending',
+            customer: o.customers.company_name,
+            customerId: cid,
+            closingDay: cd,
+            periodStart, periodEnd,
+            orders: 0, excl: 0, tax: 0,
+            invoiceNumber: null, issuedDate: null,
+          };
+        }
+        (o.order_items || []).forEach(it => {
+          const sub  = (it.quantity || 0) * (it.unit_price || 0);
+          const rate = it.products?.is_food ? 0.08 : 0.10;
+          map[key].excl += sub;
+          map[key].tax  += Math.round(sub * rate);
+        });
+        map[key].orders++;
+      });
+    });
+
+    const pendingRows    = Object.values(map).filter(r => r.status === 'pending' && r.orders > 0);
+    const inProgressRows = Object.values(map).filter(r => r.status === 'in_progress');
+
+    // 並び順：未発行→進行中→発行済み（業務的に「これから請求書を出すもの」を優先表示）
+    _allRows = [...pendingRows, ...inProgressRows, ...issuedRows];
+
+    updateKPIs(pendingRows, issuedRows, inProgressRows);
+    populateMonthFilter();
+    renderAll();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('unifiedTbody').innerHTML =
+      '<tr><td colspan="7" style="text-align:center;padding:24px;color:#991b1b">データ取得に失敗しました <button onclick="loadAll()" style="margin-left:12px;padding:6px 14px;background:#dc2626;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:14px">再読み込み</button></td></tr>';
+  }
+}
+
+function updateKPIs(pendingRows, issuedRows, inProgressRows = []) {
+  // 取消済は発行済み件数・累計から除外
+  const activeIssued = issuedRows.filter(r => !r.cancelled);
+  // 「未発行」KPI：締め切り済み未発行＋進行中（締め日前）を合算
+  // 業務的に「これから請求書を出す必要があるもの」の総数を表示する
+  const upcoming = [...pendingRows, ...inProgressRows];
+  document.getElementById('kpiPending').textContent = upcoming.length;
+  document.getElementById('kpiIssued').textContent  = activeIssued.length;
+  document.getElementById('kpiPendingAmount').textContent = '¥' + upcoming.reduce((s,r) => s + r.excl + r.tax, 0).toLocaleString();
+  document.getElementById('kpiIssuedAmount').textContent  = '¥' + activeIssued.reduce((s,r) => s + r.excl + r.tax, 0).toLocaleString();
+}
+
+function renderAll() {
+  const tbody = document.getElementById('unifiedTbody');
+  let rows = _allRows;
+  // 「未発行」フィルタは「これから請求書を出すもの」全体（締め切り済み未発行＋進行中）
+  if (currentFilter === 'pending') rows = rows.filter(r => r.status === 'pending' || r.status === 'in_progress');
+  else if (currentFilter === 'issued') rows = rows.filter(r => r.status === 'issued');
+  if (currentMonth !== 'all') {
+    rows = rows.filter(r => r.periodEnd && r.periodEnd.slice(0, 7) === currentMonth);
+  }
+  const q = currentSearch.toLowerCase();
+  if (q) rows = rows.filter(r => r.customer.toLowerCase().includes(q));
+
+  updateSortIndicators();
+  if (currentSort.key) {
+    const sk = currentSort.key, sd = currentSort.dir === 'asc' ? 1 : -1;
+    rows = rows.slice().sort((a, b) => {
+      const va = sortValue(a, sk), vb = sortValue(b, sk);
+      const cmp = SORT_TEXT_KEYS.includes(sk)
+        ? String(va || '').localeCompare(String(vb || ''), 'ja')
+        : (Number(va) || 0) - (Number(vb) || 0);
+      return cmp * sd;
+    });
+  }
+
+  _renderedRows = rows;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">該当する請求書はありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, idx) => {
+    const period = `${r.periodStart.replace(/-/g,'/')}〜${r.periodEnd.replace(/-/g,'/')}`;
+    const total  = r.excl + r.tax;
+
+    let badge, action, ordersCell, issuedDateCell;
+
+    if (r.status === 'pending') {
+      badge          = '<span class="badge badge-pending">未発行</span>';
+      action         = `<button class="btn btn-primary btn-sm issue-btn" data-idx="${idx}">発行</button>`;
+      ordersCell     = `${r.orders}件`;
+      issuedDateCell = '未発行';
+    } else if (r.status === 'issued') {
+      if (r.cancelled) {
+        badge        = `<span class="badge" style="background:#f3f4f6;color:#6b7280;border:1px solid rgba(107,114,128,0.3);font-weight:700">取消済</span>`;
+        action       = `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="openPdf(${idx})">PDF表示</button><button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;font-weight:600" onclick="confirmDeleteInvoice(${idx})">削除</button></div>`;
+      } else {
+        const unpaidBadge = r.paidAmount == null
+          ? ' <span class="badge" style="background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;font-weight:700">入金未登録</span>' : '';
+        badge        = `<span class="badge badge-issued">発行済み</span>${unpaidBadge}`;
+        action       = `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="openPdf(${idx})">PDF表示</button><button class="btn btn-sm" style="background:#fff;color:#92400e;border:1.5px solid #fcd34d;font-weight:600" onclick="confirmCancelInvoice(${idx})">発行取り消し</button><button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;font-weight:600" onclick="confirmDeleteInvoice(${idx})">削除</button></div>`;
+      }
+      ordersCell     = `${r.orders}件`;
+      issuedDateCell = r.issuedDate ? r.issuedDate.replace(/-/g,'/') : '未発行';
+    } else {
+      badge          = '<span class="badge badge-inprogress">進行中</span>';
+      action         = `<button class="btn btn-primary btn-sm interim-btn" data-idx="${idx}">途中発行</button>`;
+      ordersCell     = `${r.orders}件`;
+      issuedDateCell = '未発行';
+    }
+
+    const rowClass = r.status === 'in_progress' ? ' class="row-inprogress"' : '';
+    return `<tr${rowClass}>
+      <td style="font-weight:600">${esc(r.customer)}</td>
+      <td style="font-size:14px;color:var(--text-muted)">${period}</td>
+      <td class="num-right" style="font-family:'Space Grotesk',sans-serif">${ordersCell}</td>
+      <td class="num-right" style="font-weight:700;font-family:'Space Grotesk',sans-serif">¥${total.toLocaleString()}</td>
+      <td style="font-size:14px;color:var(--text-muted)">${issuedDateCell}</td>
+      <td>${badge}</td>
+      <td>${action}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.issue-btn').forEach(btn => {
+    btn.onclick = () => openIssueModal(_renderedRows[parseInt(btn.dataset.idx)]);
+  });
+  tbody.querySelectorAll('.interim-btn').forEach(btn => {
+    btn.onclick = () => openIssueModal(_renderedRows[parseInt(btn.dataset.idx)], true);
+  });
+}
+
+function openPdf(idx) {
+  const r = _renderedRows[idx];
+  if (!r) return;
+  const url = 'invoice.html'
+    + '?customer_id='   + encodeURIComponent(r.customerId)
+    + '&period_start='  + encodeURIComponent(r.periodStart)
+    + '&period_end='    + encodeURIComponent(r.periodEnd)
+    + '&invoice_num='   + encodeURIComponent(r.invoiceNumber || '');
+  window.location.href = url;
+}
+
+// ── 発行モーダル ──
+let _issueTarget = null;
+let _isInterim   = false;
+
+async function openIssueModal(r, isInterim = false) {
+  _issueTarget = r;
+  _isInterim   = isInterim;
+  document.getElementById('issueModalTitle').textContent   = isInterim ? '途中発行' : '請求書発行';
+  document.getElementById('interimWarning').style.display  = isInterim ? 'block' : 'none';
+  document.getElementById('issueCustomerName').textContent = r.customer;
+  document.getElementById('issuePeriodStart').value        = r.periodStart;
+  document.getElementById('issuePeriodEnd').value          = r.periodEnd;
+  // 備考欄の初期値：同じ期間に既存の途中発行があればその notes を引き継ぐ、無ければ空
+  const notesEl = document.getElementById('issueNotes');
+  if (notesEl) {
+    notesEl.value = '';
+    try {
+      const existRes = await sbFetch(
+        `/rest/v1/invoices?tenant_id=eq.${encodeURIComponent(tenantId)}` +
+        `&customer_id=eq.${encodeURIComponent(r.customerId)}` +
+        `&period_start=eq.${encodeURIComponent(r.periodStart)}` +
+        `&period_end=eq.${encodeURIComponent(r.periodEnd)}` +
+        `&superseded_at=is.null&cancelled_at=is.null&select=notes&limit=1`
+      );
+      if (existRes.ok) {
+        const arr = await existRes.json();
+        if (arr[0] && arr[0].notes) notesEl.value = arr[0].notes;
+      }
+    } catch (e) { /* 引き継ぎ失敗は致命的でないので無視 */ }
+  }
+  updateIssuePreview();
+  document.getElementById('issueModalOverlay').classList.add('open');
+}
+
+function closeIssueModal() {
+  document.getElementById('issueModalOverlay').classList.remove('open');
+  _issueTarget = null;
+  _isInterim   = false;
+}
+
+function updateIssuePreview() {
+  if (!_issueTarget) return;
+  const s    = document.getElementById('issuePeriodStart').value;
+  const e    = document.getElementById('issuePeriodEnd').value;
+  const incl = _issueTarget.excl + _issueTarget.tax;
+  document.getElementById('issuePreview').innerHTML =
+    `対象期間：${s.replace(/-/g,'/')}〜${e.replace(/-/g,'/')}　受注${_issueTarget.orders}件　税込合計：<strong>¥${incl.toLocaleString()}</strong>`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('issuePeriodStart').addEventListener('input', updateIssuePreview);
+  document.getElementById('issuePeriodEnd').addEventListener('input', updateIssuePreview);
+});
+
+async function confirmIssue() {
+  if (!_issueTarget) return;
+  const r          = _issueTarget;
+  const periodStart = document.getElementById('issuePeriodStart').value;
+  const periodEnd   = document.getElementById('issuePeriodEnd').value;
+  if (!periodStart || !periodEnd || periodStart > periodEnd) {
+    showToast('⚠️ 期間の開始日・終了日を正しく入力してください');
+    return;
+  }
+  const btn = document.getElementById('issueConfirmBtn');
+  btn.disabled = true; btn.textContent = '発行中...';
+  try {
+    // 同じ取引先・同じ期間に有効な請求書があるかチェック（取消済は除外）
+    const existCheckRes = await sbFetch(
+      `/rest/v1/invoices?tenant_id=eq.${encodeURIComponent(tenantId)}` +
+      `&customer_id=eq.${encodeURIComponent(r.customerId)}` +
+      `&period_start=eq.${encodeURIComponent(periodStart)}` +
+      `&period_end=eq.${encodeURIComponent(periodEnd)}` +
+      `&superseded_at=is.null` +
+      `&cancelled_at=is.null` +
+      `&select=id,invoice_number,is_interim`
+    );
+    const existRows = existCheckRes.ok ? await existCheckRes.json() : [];
+    const existFinal = existRows.find(x => !x.is_interim);
+    const existInterims = existRows.filter(x => x.is_interim);
+
+    // 本発行・途中発行のどちらも、既存の本発行があればブロック
+    if (existFinal) {
+      showToast(_isInterim
+        ? '⚠️ この期間は既に本発行済みです。途中発行はできません'
+        : '⚠️ この期間は既に発行済みです。新規発行はできません');
+      btn.disabled = false; btn.textContent = '発行する';
+      return;
+    }
+
+    // 既存の途中発行を「上書き済み」マーク（履歴として残す）
+    if (existInterims.length > 0) {
+      const supersededAt = new Date().toISOString();
+      await Promise.all(existInterims.map(old =>
+        sbFetch(`/rest/v1/invoices?id=eq.${encodeURIComponent(old.id)}`, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ superseded_at: supersededAt })
+        })
+      ));
+    }
+
+    // 初回判定: その取引先の有効な過去請求書が一切なければ「初回」（取消済は除外）
+    let manualPrevAmount = null;
+    const pastInvCheckRes = await sbFetch(
+      `/rest/v1/invoices?tenant_id=eq.${encodeURIComponent(tenantId)}` +
+      `&customer_id=eq.${encodeURIComponent(r.customerId)}` +
+      `&superseded_at=is.null` +
+      `&cancelled_at=is.null` +
+      `&period_end=lt.${encodeURIComponent(periodEnd)}` +
+      `&select=id&limit=1`
+    );
+    const pastInvs = pastInvCheckRes.ok ? await pastInvCheckRes.json() : [];
+    if (pastInvs.length === 0) {
+      // 初回 → ポップアップで前回請求額を入力してもらう
+      const ans = prompt(
+        `「${r.customer}」の初回請求書発行です。\n\nMeguRee 導入前の「前回請求額」（円・無ければ0）を入力してください：`,
+        '0'
+      );
+      if (ans === null) {
+        showToast('発行を中止しました');
+        btn.disabled = false; btn.textContent = '発行する';
+        return;
+      }
+      manualPrevAmount = Number(String(ans).replace(/[^0-9]/g, '')) || 0;
+    }
+
+    const today = new Date();
+    const ym    = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}`;
+    const cntRes = await sbFetch(`/rest/v1/invoices?tenant_id=eq.${tenantId}&invoice_number=like.INV-${ym}-%25&select=id`);
+    const cnt    = (await cntRes.json()).length + 1;
+    const num    = `INV-${ym}-${String(cnt).padStart(3,'0')}`;
+    const incl   = r.excl + r.tax;
+
+    const notesValue = (document.getElementById('issueNotes')?.value || '').trim();
+    const invoicePayloadBody = {
+      invoice_number: num,
+      customer_id:    r.customerId,
+      period_start:   periodStart,
+      period_end:     periodEnd,
+      issued_date:    today.toISOString().slice(0,10),
+      total_excl_tax: r.excl,
+      tax_amount:     r.tax,
+      total_incl_tax: incl,
+      tenant_id:      tenantId,
+      is_interim:     _isInterim,
+      notes:          notesValue || null,
+    };
+    if (manualPrevAmount !== null) invoicePayloadBody.manual_prev_amount = manualPrevAmount;
+
+    const res = await sbFetch('/rest/v1/invoices', {
+      method: 'POST',
+      body: JSON.stringify(invoicePayloadBody)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    // ── 明細スナップショット保存（請求書発行時点の商品名・単価・税率を固定） ──
+    const invoicePayload = await res.json();
+    const invoiceId = Array.isArray(invoicePayload) ? invoicePayload[0]?.id : invoicePayload?.id;
+    if (!invoiceId) throw new Error('発行された請求書IDの取得に失敗しました');
+
+    // 初回前回請求額が入力された場合、操作履歴に記録
+    if (manualPrevAmount !== null) {
+      try {
+        await sbFetch('/rest/v1/audit_log', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            user_name: userName || '—',
+            action: 'create',
+            table_name: 'invoices',
+            record_id: String(invoiceId),
+            record_label: `${r.customer} 初回前回請求額`,
+            old_values: null,
+            new_values: { invoice_number: num, manual_prev_amount: manualPrevAmount }
+          })
+        });
+      } catch(e) { console.warn('audit_log書き込み失敗:', e); }
+    }
+
+    try {
+      const ordersRes = await sbFetch(
+        '/rest/v1/orders?tenant_id=eq.' + encodeURIComponent(tenantId)
+        + '&customer_id=eq.' + encodeURIComponent(r.customerId)
+        + '&order_date=gte.' + encodeURIComponent(periodStart)
+        + '&order_date=lte.' + encodeURIComponent(periodEnd)
+        + '&select=id,order_date,is_personal_trade,handling_fee,shipping_fee,handling_fee_charge,shipping_fee_charge,handling_fee_qty,shipping_fee_qty,order_items(product_id,quantity,unit_price,remarks,products(product_code,product_name,is_food))'
+        + '&order=order_date.asc&order_items.order=display_order.asc'
+      );
+      if (!ordersRes.ok) throw new Error('HTTP ' + ordersRes.status);
+      const ordersData = await ordersRes.json();
+
+      const itemsPayload = [];
+      let dispOrder = 0;
+      // 符号付きの正味（charge=true は加算＋／false は差し引き−）。受注ごとに向きが混在しても集計できる。
+      let netHandling = 0;
+      let netShipping = 0;
+      let periodIsPersonal = false;
+      for (const ord of (ordersData || [])) {
+        netHandling += (ord.handling_fee_charge ? 1 : -1) * (Number(ord.handling_fee) || 0) * (Number(ord.handling_fee_qty) || 1);
+        netShipping += (ord.shipping_fee_charge ? 1 : -1) * (Number(ord.shipping_fee) || 0) * (Number(ord.shipping_fee_qty) || 1);
+        if (ord.is_personal_trade) periodIsPersonal = true;
+        for (const it of (ord.order_items || [])) {
+          const unitPrice = Number(it.unit_price) || 0;
+          const qty       = Number(it.quantity)   || 0;
+          itemsPayload.push({
+            invoice_id:    invoiceId,
+            product_id:    it.product_id || null,
+            product_code:  it.products?.product_code || '',
+            product_name:  it.products?.product_name || '',
+            quantity:      qty,
+            unit_price:    unitPrice,
+            subtotal:      Math.round(unitPrice * qty),
+            is_food:       !!(it.products?.is_food),
+            remarks:       it.remarks || null,
+            display_order: dispOrder++,
+          });
+        }
+      }
+
+      if (itemsPayload.length > 0) {
+        const itemsRes = await sbFetch('/rest/v1/invoice_items', {
+          method: 'POST',
+          body: JSON.stringify(itemsPayload),
+        });
+        if (!itemsRes.ok) throw new Error('HTTP ' + itemsRes.status);
+      }
+
+      // 期間集計後、個人取引フラグ・手数料・送料を invoices にスナップショット保存。
+      // 金額は正味の絶対値、向きは正味の符号（>0で加算）で記録。表示・再計算と整合させる。
+      // 手数料・送料は「税込」金額。個人取引は消費税なしでそのまま加減算／卸取引は税込から内税を
+      // 割り戻して計上し、送料に消費税を二重に乗せない。
+      const feeSigned = netHandling + netShipping;
+      if (periodIsPersonal || netHandling !== 0 || netShipping !== 0) {
+        const patch = {
+          is_personal_trade: periodIsPersonal,
+          handling_fee:        Math.abs(netHandling),
+          shipping_fee:        Math.abs(netShipping),
+          handling_fee_charge: netHandling > 0,
+          shipping_fee_charge: netShipping > 0,
+        };
+        // 手数料・送料は税込・税計算しない。税抜・消費税は商品のみ、合計（税込）に送料を加減算。
+        if (periodIsPersonal) {
+          // 個人取引：消費税なし。送料は税込のまま合計に加減算。
+          patch.total_excl_tax = r.excl;
+          patch.tax_amount     = 0;
+          patch.total_incl_tax = r.excl + feeSigned;
+        } else if (feeSigned !== 0) {
+          // 卸取引：税抜・消費税は商品のまま据え置き、送料（税込）を合計に加減算するだけ。
+          patch.total_excl_tax = r.excl;
+          patch.tax_amount     = r.tax;
+          patch.total_incl_tax = r.excl + r.tax + feeSigned;
+        }
+        await sbFetch('/rest/v1/invoices?id=eq.' + encodeURIComponent(invoiceId), {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify(patch),
+        });
+      }
+    } catch (snapshotErr) {
+      // 明細スナップショット保存失敗 → 請求書ヘッダを取り消してロールバック
+      console.error('invoice_items の保存に失敗。請求書をロールバックします', snapshotErr);
+      await sbFetch('/rest/v1/invoices?id=eq.' + encodeURIComponent(invoiceId), { method: 'DELETE' });
+      throw snapshotErr;
+    }
+
+    closeIssueModal();
+    showToast(`✅ 請求書を発行しました（${num}）`);
+    const pdfUrl = 'invoice.html'
+      + '?customer_id='  + encodeURIComponent(r.customerId)
+      + '&period_start=' + encodeURIComponent(periodStart)
+      + '&period_end='   + encodeURIComponent(periodEnd)
+      + '&invoice_num='  + encodeURIComponent(num);
+    window.location.href = pdfUrl;
+  } catch(e) {
+    console.error(e);
+    showToast('❌ 発行に失敗しました。もう一度お試しください。');
+  } finally {
+    btn.disabled = false; btn.textContent = '発行する';
+  }
+}
+
+// ── 発行取り消し ──
+async function confirmCancelInvoice(idx) {
+  const r = _renderedRows[idx];
+  if (!r || !r.invoiceId) return;
+  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）の発行を取り消します。\n同じ期間で再発行できるようになります。\nよろしいですか？`);
+  if (!ok) return;
+
+  try {
+    const nowIso = new Date().toISOString();
+    const res = await sbFetch(
+      '/rest/v1/invoices?id=eq.' + encodeURIComponent(r.invoiceId),
+      { method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ cancelled_at: nowIso }) }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    try {
+      await sbFetch('/rest/v1/audit_log', {
+        method: 'POST',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          user_name: userName || '—',
+          action: 'cancel',
+          table_name: 'invoices',
+          record_id: String(r.invoiceId),
+          record_label: `${r.customer} ${r.invoiceNumber} 発行取り消し`,
+          old_values: { cancelled_at: null },
+          new_values: { cancelled_at: nowIso }
+        })
+      });
+    } catch(e) { console.warn('audit_log書き込み失敗:', e); }
+
+    showToast(`✅ 請求書（${r.invoiceNumber}）の発行を取り消しました`);
+    await loadAll();
+  } catch(e) {
+    console.error(e);
+    showToast('❌ 発行取り消しに失敗しました。もう一度お試しください。');
+  }
+}
+
+// ── 請求書削除（物理削除） ──
+async function confirmDeleteInvoice(idx) {
+  const r = _renderedRows[idx];
+  if (!r || !r.invoiceId) return;
+  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）を削除します。\n元に戻せません。\nよろしいですか？`);
+  if (!ok) return;
+
+  try {
+    // 削除前に audit_log を書き込み（削除後では参照できなくなるため）
+    try {
+      await sbFetch('/rest/v1/audit_log', {
+        method: 'POST',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          user_name: userName || '—',
+          action: 'delete',
+          table_name: 'invoices',
+          record_id: String(r.invoiceId),
+          record_label: `${r.customer} ${r.invoiceNumber} 削除`,
+          old_values: {
+            invoice_number: r.invoiceNumber,
+            period_start: r.periodStart,
+            period_end: r.periodEnd,
+            total_incl_tax: r.excl + r.tax
+          },
+          new_values: null
+        })
+      });
+    } catch(e) { console.warn('audit_log書き込み失敗:', e); }
+
+    // 明細を先に削除
+    const itemsRes = await sbFetch(
+      '/rest/v1/invoice_items?invoice_id=eq.' + encodeURIComponent(r.invoiceId),
+      { method: 'DELETE', headers: { 'Prefer': 'return=minimal' } }
+    );
+    if (!itemsRes.ok) throw new Error('明細削除失敗 HTTP ' + itemsRes.status);
+
+    // 請求書本体を削除
+    const invRes = await sbFetch(
+      '/rest/v1/invoices?id=eq.' + encodeURIComponent(r.invoiceId),
+      { method: 'DELETE', headers: { 'Prefer': 'return=minimal' } }
+    );
+    if (!invRes.ok) throw new Error('請求書削除失敗 HTTP ' + invRes.status);
+
+    showToast(`✅ 請求書（${r.invoiceNumber}）を削除しました`);
+    await loadAll();
+  } catch(e) {
+    console.error(e);
+    showToast('❌ 削除に失敗しました。もう一度お試しください。');
+  }
+}
+
+loadAll();
+</script>
+<script src="mobile.js"></script>
+</body>
+</html>

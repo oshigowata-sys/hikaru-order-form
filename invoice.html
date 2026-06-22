@@ -1,0 +1,1947 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeguRee - 請求書</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #e8630a;
+    --green: #1e6641;
+    --bg: #f7f3ee;
+    --surface: #ffffff;
+    --border: #e2d9ce;
+    --text: #1a1208;
+    --text-muted: #7a6a55;
+    --sidebar-bg: #1a1208;
+  }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ===== 操作バー（印刷時非表示） ===== */
+  .action-bar {
+    background: var(--sidebar-bg);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .action-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .action-bar img { width: 100px; }
+
+  .action-bar-title {
+    color: rgba(232,213,188,0.6);
+    font-size: 14px;
+  }
+
+  .action-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-primary { background: var(--orange); color: white; }
+  .btn-primary:hover { background: #d4570a; }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: rgba(232,213,188,0.9); border: 1px solid rgba(255,255,255,0.15); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+  .btn-ghost { background: transparent; color: rgba(232,213,188,0.7); }
+  .btn-ghost:hover { color: white; }
+
+  /* ===== メインコンテンツ ===== */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* ===== 設定パネル ===== */
+  .settings-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+
+  .settings-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .settings-grid .full { grid-column: 1 / -1; }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .form-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .form-input {
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus { border-color: var(--orange); background: white; }
+
+  .settings-save {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .save-msg {
+    font-size: 14px;
+    color: var(--green);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .save-msg.show { opacity: 1; }
+
+  .btn-save {
+    background: var(--green);
+    color: white;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+
+  .btn-save:hover { background: #165230; }
+
+  /* ===== 請求書本体 ===== */
+  #invoice-wrap {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+
+  /* ローディング */
+  .loading-state {
+    padding: 80px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 請求書レイアウト */
+  .invoice {
+    padding: 36px 48px;
+    font-family: 'Noto Serif JP', 'Noto Sans JP', sans-serif;
+  }
+
+  .invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1.5px solid var(--text);
+  }
+
+  .invoice-title-block {}
+
+  .invoice-title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--text);
+    font-family: 'Noto Serif JP', serif;
+  }
+
+  .invoice-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin-top: 4px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .invoice-meta {
+    text-align: right;
+  }
+
+  .invoice-meta table {
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .invoice-meta td {
+    padding: 3px 0 3px 20px;
+    color: var(--text);
+  }
+
+  .invoice-meta td:first-child {
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-align: right;
+  }
+
+  .invoice-meta td:last-child {
+    font-weight: 500;
+    text-align: right;
+  }
+
+  /* 請求先・発行者 */
+  .invoice-parties {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    gap: 24px;
+  }
+
+  .invoice-to {
+    flex: 1;
+  }
+
+  .party-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-family: 'Noto Sans JP', sans-serif;
+    margin-bottom: 8px;
+  }
+
+  .party-name {
+    font-size: 17px;
+    font-weight: 700;
+    font-family: 'Noto Serif JP', serif;
+    color: var(--text);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .party-name-suffix { flex-shrink: 0; }
+
+  .party-name-suffix {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    font-family: 'Noto Sans JP', sans-serif;
+    margin-left: 4px;
+  }
+
+  .party-address {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'Noto Sans JP', sans-serif;
+    line-height: 1.8;
+    margin-top: 6px;
+    white-space: pre-line;
+  }
+
+  .invoice-amount-highlight {
+    background: var(--text);
+    color: white;
+    border-radius: 10px;
+    padding: 14px 22px;
+    text-align: center;
+    min-width: 180px;
+  }
+
+  .amount-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.6;
+    font-family: 'Noto Sans JP', sans-serif;
+    margin-bottom: 4px;
+  }
+
+  .amount-value {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .amount-tax {
+    font-size: 10px;
+    opacity: 0.5;
+    font-family: 'Noto Sans JP', sans-serif;
+    margin-top: 3px;
+  }
+
+  /* 明細テーブル */
+  .invoice-table-wrap {
+    margin-bottom: 16px;
+  }
+
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+  }
+
+  .invoice-table thead tr {
+    background: #f0ebe3;
+    color: var(--text-muted);
+    border-bottom: 1.5px solid #d4c9bb;
+  }
+
+  .invoice-table thead th {
+    padding: 7px 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: 11px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .invoice-table thead th:nth-child(n+3) { text-align: right; }
+  .invoice-table thead th:last-child { text-align: center; }
+
+  .invoice-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .invoice-table tbody tr:hover { background: #faf8f5; }
+
+  .invoice-table tbody td {
+    padding: 7px 14px;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .invoice-table tbody td:not(:first-child):not(:nth-child(2)) { text-align: right; }
+
+  .invoice-table tbody tr:nth-child(even) { background: #faf8f5; }
+  .invoice-table tbody tr:hover { background: #f3ede4; }
+
+  /* セル全体に枠線（左右・上下） — border-collapse: collapse により隣接セルで1本線に */
+  .invoice-table thead th,
+  .invoice-table tbody td,
+  .invoice-table tfoot td { border: 1px solid var(--border); }
+
+  /* 空枠行：画面表示時も印刷時も常に表示（明細10行枠固定） */
+  .invoice-table tbody tr.empty-row { display: table-row; }
+  /* 空枠行は背景なしで控えめに表示 */
+  .invoice-table tbody tr.empty-row { background: transparent !important; }
+  .invoice-table tbody tr.empty-row:hover { background: transparent !important; }
+
+  .invoice-table tfoot tr { background: #faf8f5; }
+
+  .invoice-table tfoot td {
+    padding: 7px 14px;
+    font-size: 13px;
+    text-align: right;
+  }
+
+  .invoice-table tfoot td:first-child {
+    text-align: left;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .invoice-table tfoot tr.total-row {
+    background: white;
+    border-top: 2px solid var(--text);
+  }
+
+  .invoice-table tfoot tr.total-row td {
+    font-size: 15px;
+    font-weight: 700;
+    padding: 11px 14px;
+  }
+
+  /* ===== 合計＋備考 横並びレイアウト ===== */
+  .totals-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    align-items: stretch;
+  }
+  .totals-notes-box {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 60px;
+  }
+  .totals-notes-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .totals-notes-textarea {
+    width: 100%;
+    flex: 1;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    background: transparent;
+    padding: 0;
+    min-height: 36px;
+  }
+  .totals-notes-text {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .totals-summary-table {
+    width: 260px;
+    border-collapse: collapse;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .totals-summary-table td {
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+  }
+  .totals-summary-table td:first-child {
+    background: #faf8f5;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    width: 110px;
+  }
+  .totals-summary-table td:last-child {
+    text-align: right;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .totals-summary-table tr.total-row td {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    background: #fff;
+    border-top: 2px solid var(--text);
+  }
+  /* 印刷時の自動保存ボタンは隠す */
+  @media print { .notes-save-btn { display: none !important; } }
+  /* 印刷時：備考textareaのスクロールバーや見た目を整える */
+  @media print {
+    .totals-notes-textarea { resize: none !important; overflow: hidden !important; }
+  }
+
+  /* 振込先・備考 */
+  .invoice-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .footer-section-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .bank-info {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+
+  .invoice-from {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .invoice-from .from-name {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Serif JP', serif;
+    margin-bottom: 2px;
+  }
+
+  /* ===== 御請求サマリー ===== */
+  .billing-summary {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .summary-cells {
+    display: flex;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    flex: 1;
+  }
+  .summary-cell {
+    flex: 1;
+    padding: 8px 6px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+  .summary-cell:last-child { border-right: none; }
+  .summary-cell-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .summary-cell-value {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .summary-total-box {
+    border: 2px solid var(--orange);
+    border-radius: 8px;
+    padding: 8px 14px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 130px;
+  }
+  .summary-total-label {
+    font-size: 9px;
+    color: var(--orange);
+    margin-bottom: 5px;
+    white-space: nowrap;
+  }
+  .summary-total-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--orange);
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .unpaid-warning {
+    background: #fff4ec;
+    border: 1px solid var(--orange);
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    color: #b34500;
+    display: flex;
+    align-items: center;
+  }
+
+  /* 印刷スタイル */
+  @media print {
+    .action-bar, .settings-panel, .no-print { display: none !important; }
+    body { background: white; }
+    .main { padding: 0; max-width: 100%; }
+    #invoice-wrap { box-shadow: none; border-radius: 0; }
+    .invoice { padding: 6mm 8mm; }
+    .invoice-table tbody tr:hover { background: transparent; }
+    .invoice-table thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #sumPaid { cursor: default !important; }
+    @page { margin: 4mm; size: A4; }
+
+    /* 納品書兼請求書モード時：A4 280mm 固定でブラウザ印刷余白「デフォルト」(8〜10mm)
+       でも見切れないよう確実に収める。上下半々で 140mm 固定。 */
+    body.delivery-mode #invoice-wrap {
+      height: 280mm;
+      display: flex;
+      flex-direction: column;
+    }
+    body.delivery-mode #deliveryBody {
+      flex: 0 0 140mm;
+      min-height: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    /* 半分ラインから「請求書」タイトルまでの余白。物理半分(148.5mm)付近から開始。
+       下半分は合計まで収めるため余白を 9mm に圧縮（合計の見切れ対策・PR後）。 */
+    body.delivery-mode #invoiceBody {
+      flex: 0 0 140mm;
+      min-height: 0;
+      box-sizing: border-box;
+      padding-top: 9mm;
+      overflow: hidden;
+    }
+    /* 下半分（請求書）はヘッダー文字を上半分に合わせて拡大したぶん、明細行を 4.5mm/行に詰めて
+       合計まで余裕を持って収める（文字サイズは上半分と統一・折り線は維持）。 */
+    body.delivery-mode #invoiceBody .invoice-table tbody td { height: 4.5mm !important; }
+    /* 請求書側ヘッダーの文字サイズを納品書側（上半分）と統一。下半分は行高5mmで余白を確保済み。 */
+    body.delivery-mode #invoiceBody .invoice-header { margin-bottom: 3px !important; padding-bottom: 3px !important; }
+    body.delivery-mode #invoiceBody .invoice-title { font-size: 15px !important; letter-spacing: 1.5px !important; }
+    body.delivery-mode #invoiceBody .invoice-subtitle { font-size: 8px !important; margin-top: 1px !important; }
+    body.delivery-mode #invoiceBody .invoice-meta table { font-size: 9px !important; }
+    body.delivery-mode #invoiceBody .invoice-meta td { padding: 0 0 0 10px !important; line-height: 1.35 !important; }
+    body.delivery-mode #invoiceBody .invoice-parties { margin-bottom: 3px !important; gap: 10px !important; }
+    body.delivery-mode #invoiceBody .party-label { font-size: 8px !important; margin-bottom: 3px !important; }
+    body.delivery-mode #invoiceBody .party-name { font-size: 15px !important; margin-bottom: 1px !important; }
+    body.delivery-mode #invoiceBody .party-address { font-size: 11px !important; line-height: 1.3 !important; margin-top: 1px !important; }
+    body.delivery-mode #invoiceBody .invoice-parties > div:last-child > div { font-size: 9px !important; line-height: 1.35 !important; }
+    /* delivery-mode（A4半分ずつ）では紙面が狭いので住所を1行表示に戻す。
+       単独A4モードでは2行表示を維持。pre-line を normal で上書きしつつ、
+       テンプレートの \n は空白として扱われ1行結合される。 */
+    body.delivery-mode .party-address,
+    body.delivery-mode [style*="pre-line"] {
+      white-space: normal !important;
+    }
+
+    /* A4 1枚に収めるための圧縮 */
+    .invoice-header { margin-bottom: 4px; padding-bottom: 4px; }
+    .invoice-title { font-size: 16px; letter-spacing: 2px; }
+    .invoice-subtitle { font-size: 9px; }
+    .invoice-meta table { font-size: 10px; }
+    .invoice-meta td { padding: 1px 0 1px 12px; }
+
+    .invoice-parties { margin-bottom: 4px; gap: 12px; }
+    .party-name { font-size: 18px; }
+    .party-address { font-size: 13px; line-height: 1.4; margin-top: 3px; }
+    .invoice-amount-highlight { padding: 5px 10px; min-width: 130px; }
+    .amount-label { font-size: 9px; }
+    .amount-value { font-size: 15px; }
+    .amount-tax { font-size: 9px; }
+
+    /* 御請求サマリー（請求書管理モードのみ表示） */
+    .billing-summary { margin-bottom: 4px; gap: 6px; }
+    .summary-cell { padding: 2px 4px; }
+    .summary-cell-label { font-size: 8px; margin-bottom: 1px; }
+    .summary-cell-value { font-size: 9px; }
+    .summary-total-box { padding: 2px 8px; min-width: 110px; }
+    .summary-total-label { font-size: 8px; margin-bottom: 1px; }
+    .summary-total-value { font-size: 12px; }
+    .unpaid-warning { padding: 2px 8px; font-size: 9px; }
+
+    /* お振込先（請求書管理モードのみ・上部1行表記） */
+    .invoice-bank-inline { margin-bottom: 4px !important; padding: 4px 8px !important; }
+    .invoice-bank-inline .footer-section-title { font-size: 8px !important; margin-bottom: 1px !important; }
+    .invoice-bank-inline > div:last-child { font-size: 9px !important; line-height: 1.35 !important; }
+
+    /* 明細テーブル（明細10行までA4 1枚に収まるよう更に圧縮） */
+    .invoice-table-wrap { margin-bottom: 4px; }
+    .invoice-table { font-size: 9px; page-break-inside: avoid; }
+    .invoice-table thead th { padding: 2px 5px; font-size: 8px; }
+    .invoice-table tbody td { padding: 1.5px 5px; font-size: 9px; line-height: 1.3; }
+    .invoice-table tbody tr { page-break-inside: avoid; }
+    .invoice-table tfoot td { padding: 2px 5px; font-size: 9px; }
+    .invoice-table tfoot tr.total-row td { padding: 3px 5px; font-size: 11px; }
+
+    .invoice-footer { margin-top: 4px; padding-top: 4px; gap: 8px; }
+    .invoice-footer .footer-section-title { font-size: 9px; }
+    .invoice-footer .bank-info { font-size: 9px; line-height: 1.35; }
+
+    /* ===== 納品書兼請求書モード専用の更なる圧縮 =====
+       A4 1枚に上半分=納品書・下半分=請求書を載せる構成で、
+       下半分（請求書側）は請求書番号・発行日・締め日・支払期限・受注ID と
+       メタ情報が多く、10商品入ると小計／消費税／合計（税込）の3行が紙の外に
+       押し出されて切れていた。両半分を更に圧縮して10行でも合計まで収まるようにする。
+       単独請求書モード（invoice-only）・期間請求書には影響しない（.delivery-mode 限定）。 */
+    body.delivery-mode .invoice { padding: 4mm 7mm; }
+
+    /* 上下の余白を縮める */
+    body.delivery-mode .invoice-header { margin-bottom: 3px; padding-bottom: 3px; }
+    body.delivery-mode .invoice-title { font-size: 15px; letter-spacing: 1.5px; }
+    body.delivery-mode .invoice-subtitle { font-size: 8px; margin-top: 1px; }
+    body.delivery-mode .invoice-meta table { font-size: 9px; }
+    body.delivery-mode .invoice-meta td { padding: 0 0 0 10px; line-height: 1.35; }
+    body.delivery-mode .invoice-meta td:first-child { font-size: 9px; }
+
+    /* 取引先・発行者ブロックを圧縮 */
+    body.delivery-mode .invoice-parties { margin-bottom: 3px !important; gap: 10px; }
+    body.delivery-mode .party-label { font-size: 8px; letter-spacing: 2px; margin-bottom: 3px; }
+    body.delivery-mode .party-name { font-size: 15px !important; margin-bottom: 1px; }
+    body.delivery-mode .party-name-suffix { font-size: 11px; }
+    body.delivery-mode .party-address { font-size: 11px; line-height: 1.3; margin-top: 1px; }
+
+    /* 発行者ブロック内の div（インラインstyleで size 12-15px が当たっている） */
+    body.delivery-mode #deliveryBody .invoice-parties > div:last-child > div,
+    body.delivery-mode #invoiceBody  .invoice-parties > div:last-child > div { font-size: 9px !important; line-height: 1.35 !important; }
+    body.delivery-mode #deliveryBody .invoice-parties > div:last-child > div:first-child,
+    body.delivery-mode #invoiceBody  .invoice-parties > div:last-child .from-name,
+    body.delivery-mode #deliveryBody .invoice-parties > div:last-child > div[style*="font-weight:700"] { font-size: 11px !important; }
+
+    /* 明細行を更に詰める（10行 × 約12px = 120px → 約100px に圧縮） */
+    body.delivery-mode .invoice-table-wrap { margin-bottom: 2px; }
+    body.delivery-mode .invoice-table { font-size: 8.5px; }
+    body.delivery-mode .invoice-table thead th { padding: 1.5px 4px; font-size: 8px; }
+    body.delivery-mode .invoice-table tbody td { padding: 0.5px 4px; font-size: 8.5px; line-height: 1.2; }
+    body.delivery-mode .invoice-table tfoot td { padding: 1px 4px; font-size: 8.5px; }
+    body.delivery-mode .invoice-table tfoot tr.total-row td { padding: 2px 4px; font-size: 10px; }
+
+    /* 印刷時は明細を常に10行分の枠で固定（請求明細書・納品書兼請求書のどちらも対象） */
+    .invoice-table tbody tr.empty-row { display: table-row; }
+
+    /* 印刷時の行高さ。納品書・請求書とも同じ6mm/行に揃える
+       （ブラウザ印刷余白「デフォルト」でも合計まで確実に表示するための安全策） */
+    body.delivery-mode .invoice-table tbody td { height: 6mm; vertical-align: middle; }
+    body:not(.delivery-mode) .invoice-table tbody td { height: 14mm; vertical-align: middle; }
+
+    /* 備考欄（下半分の最後）を縮める */
+    body.delivery-mode .invoice-footer { margin-top: 2px; padding-top: 2px; gap: 6px; }
+    body.delivery-mode .invoice-footer .footer-section-title { font-size: 8px; }
+    body.delivery-mode .invoice-footer > div > div:last-child { font-size: 9px !important; line-height: 1.4 !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 操作バー -->
+<div class="action-bar no-print">
+  <div class="action-bar-left">
+    <img src="https://raw.githubusercontent.com/oshigowata-sys/order-form/main/meguree_final%20(2).svg" alt="MeguRee">
+    <span class="action-bar-title">請求書発行</span>
+  </div>
+  <div class="action-bar-right">
+    <div id="prevAmountWrap" style="display:flex;align-items:center;gap:6px" class="no-print">
+      <label style="color:rgba(232,213,188,0.7);font-size:14px;white-space:nowrap">前回御請求額</label>
+      <input type="text" id="prevAmountInput" inputmode="numeric" placeholder="0" readonly
+        style="width:110px;padding:5px 9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(255,255,255,0.7);font-size:14px;font-family:inherit;outline:none;cursor:default">
+    </div>
+    <a id="backBtn" href="orders.html" class="btn btn-ghost">← 戻る</a>
+    <a href="settings.html" class="btn btn-secondary">⚙ 発行者設定</a>
+    <button class="btn btn-primary" onclick="window.print()">🖨 印刷 / PDF保存</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- 請求書本体 -->
+  <div id="invoice-wrap">
+    <div class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <div>受注データを取得中...</div>
+    </div>
+    <div class="invoice" id="deliveryBody" style="display:none;"></div>
+    <div class="invoice" id="invoiceBody" style="display:none;"></div>
+  </div>
+
+</div>
+
+<script src="config.js"></script>
+<script src="auth.js?v=20260510-idletimer"></script>
+<script>
+  checkAuth();
+  function yenDigits(s) { return String(s ?? '').replace(/[^0-9]/g, ''); }
+  function formatYen(s) {
+    const d = yenDigits(s);
+    return d === '' ? '' : Number(d).toLocaleString('en-US');
+  }
+  function onYenInput(el) {
+    el.value = formatYen(el.value);
+    el.size = Math.max((el.value || '').length, 1);
+  }
+
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
+  // 個人取引：税込み単価そのまま／卸取引：税抜き単価そのまま。換算なし。
+  function toDisplayPrice(unitPrice, _isFood, _isPersonalTrade) {
+    return Math.round(unitPrice);
+  }
+  // 税率マーク：
+  //   個人取引（税込み単価表示）：軽減='ケコ'（軽減税率込）/ 標準='コ'（税込）
+  //   得意先取引（税抜き単価表示）：軽減='ケ'（軽減税率）/ 標準=''（マーク無し）
+  function taxMarkText(isFood, isPersonal) {
+    if (isPersonal) return isFood ? 'ケコ' : 'コ';
+    return isFood ? 'ケ' : '';
+  }
+  // 集計（卸取引：外税方式／個人取引：単価＝税込み金額として単純合計・消費税計算なし）
+  function calcInvoiceTotals(items, handlingFee, shippingFee, isPersonalTrade, handlingCharge, shippingCharge) {
+    let sum8 = 0, sum10 = 0;
+    items.forEach(it => {
+      const sub = Number(it['小計'] || it['subtotal'] || (Number(it['数量']||0) * Number(it['単価']||0)) || 0);
+      if (it.isFood) sum8 += sub;
+      else           sum10 += sub;
+    });
+    // 手数料・送料は税込で入力された最終金額。消費税は計算せず、合計（税込）にそのまま加減算する。
+    const hSign = handlingCharge ? 1 : -1;
+    const sSign = shippingCharge ? 1 : -1;
+    const feeIncl = hSign * (Number(handlingFee) || 0) + sSign * (Number(shippingFee) || 0);
+    if (isPersonalTrade) {
+      // 個人取引：消費税計算なし。送料も税込のまま合計に加算。
+      return {
+        excl8: sum8, excl10: sum10,
+        subtotal: sum8 + sum10,
+        tax8: 0, tax10: 0, tax: 0,
+        total: sum8 + sum10 + feeIncl,
+        incl8: sum8, incl10: sum10,
+      };
+    }
+    // 卸取引（外税）：商品にのみ課税。送料・手数料は税込なので税計算せず合計に加減算（消費税の行に出さない）。
+    const tax8  = Math.round(sum8 * 0.08);
+    const tax10 = Math.round(sum10 * 0.10);
+    const subtotal = sum8 + sum10;
+    return {
+      excl8: sum8, excl10: sum10,
+      subtotal,
+      tax8, tax10, tax: tax8 + tax10,
+      total: subtotal + tax8 + tax10 + feeIncl,
+      incl8: sum8 + tax8, incl10: sum10 + tax10,
+    };
+  }
+  // 期間請求書（請求明細書）用の集計：受注ごとのグループから合算。
+  // 各受注の送料・手数料は符号（charge）×数量（qty）込みで合算する。
+  // 数学的には calcInvoiceTotals に「全受注の符号付き正味（netHandling+netShipping）」を渡したものと一致する。
+  function calcPeriodTotals(groups, isPersonalTrade) {
+    let sum8 = 0, sum10 = 0, feeIncl = 0;
+    (groups || []).forEach(g => {
+      (g.items || []).forEach(it => {
+        const sub = Number(it['小計'] || it['subtotal'] || (Number(it['数量']||0) * Number(it['単価']||0)) || 0);
+        if (it.isFood) sum8 += sub; else sum10 += sub;
+      });
+      feeIncl += (g.handlingCharge ? 1 : -1) * (Number(g.handlingFee) || 0) * (Number(g.handlingQty) || 1);
+      feeIncl += (g.shippingCharge ? 1 : -1) * (Number(g.shippingFee) || 0) * (Number(g.shippingQty) || 1);
+    });
+    if (isPersonalTrade) {
+      return {
+        excl8: sum8, excl10: sum10,
+        subtotal: sum8 + sum10,
+        tax8: 0, tax10: 0, tax: 0,
+        total: sum8 + sum10 + feeIncl,
+        incl8: sum8, incl10: sum10,
+      };
+    }
+    const tax8  = Math.round(sum8 * 0.08);
+    const tax10 = Math.round(sum10 * 0.10);
+    const subtotal = sum8 + sum10;
+    return {
+      excl8: sum8, excl10: sum10,
+      subtotal,
+      tax8, tax10, tax: tax8 + tax10,
+      total: subtotal + tax8 + tax10 + feeIncl,
+      incl8: sum8 + tax8, incl10: sum10 + tax10,
+    };
+  }
+  // 集計表の中身（個人取引：税率別小計＋合計のみ／卸取引：外税方式）
+  function buildInvoiceTotalsRows(t, isPersonalTrade, grandLabel) {
+    const label = grandLabel || '合計（税込）';
+    if (isPersonalTrade) {
+      const rows = [];
+      if (t.excl8 !== 0)  rows.push(`<tr><td>8%軽減込ケコ</td><td>${fmt(t.excl8)}</td></tr>`);
+      if (t.excl10 !== 0) rows.push(`<tr><td>10%対象込コ</td><td>${fmt(t.excl10)}</td></tr>`);
+      rows.push(`<tr class="total-row"><td>${label}</td><td>${fmt(t.total)}</td></tr>`);
+      return rows.join('');
+    }
+    return `
+      <tr><td>${label === '小計' || label === '合計（税込）' ? '小計' : '税抜合計'}</td><td>${fmt(t.subtotal)}</td></tr>
+      ${t.tax8  !== 0 ? `<tr><td>消費税（8%）</td><td>${fmt(t.tax8)}</td></tr>` : ''}
+      ${t.tax10 !== 0 ? `<tr><td>消費税（10%）</td><td>${fmt(t.tax10)}</td></tr>` : ''}
+      <tr class="total-row"><td>${label}</td><td>${fmt(t.total)}</td></tr>`;
+  }
+  // 手数料・送料の明細行HTML（あれば返す）
+  function buildFeeRowsInvoice(handlingFee, shippingFee, isPersonalTrade, handlingCharge, shippingCharge, handlingQty, shippingQty) {
+    const rows = [];
+    const buildOne = (label, fee, charge, qty) => {
+      const q = Number(qty) || 1;
+      const unit = (charge ? 1 : -1) * Math.abs(Number(fee) || 0);
+      const line = unit * q;
+      return `<tr>
+        <td style="font-size:11px;color:var(--text-muted);font-family:'Space Grotesk',sans-serif">—</td>
+        <td>${label}</td>
+        <td style="text-align:right">${q}</td>
+        <td style="text-align:right">${fmt(unit)}<span style="margin-left:3px;font-size:10px;color:var(--text-muted);font-weight:600">${taxMarkText(false, isPersonalTrade)}</span></td>
+        <td style="text-align:right">${fmt(line)}</td>
+        <td style="text-align:center;font-size:11px;color:var(--text-muted)">税込</td>
+        <td class="remarks-cell" style="font-size:11px;color:var(--text-muted)"></td>
+      </tr>`;
+    };
+    if ((Number(handlingFee) || 0) > 0) rows.push(buildOne('手数料', handlingFee, handlingCharge, handlingQty));
+    if ((Number(shippingFee) || 0) > 0) rows.push(buildOne('送料',   shippingFee, shippingCharge, shippingQty));
+    return rows.join('');
+  }
+
+
+  function sbFetch(path, options = {}) {
+    const { headers: extraHeaders, ...rest } = options;
+    return fetch(SB_URL + path, {
+      ...rest,
+      headers: {
+        'apikey': SB_ANON,
+        'Authorization': 'Bearer ' + getAccessToken(),
+        'Content-Type': 'application/json',
+        ...(extraHeaders || {}),
+      }
+    });
+  }
+
+  // URLパラメータ取得
+  const params = new URLSearchParams(location.search);
+  const targetOrderId   = params.get('order_id');    // 単一受注UUID
+  const targetCustomerId = params.get('customer_id'); // 期間請求書モード
+  const targetPeriodStart = params.get('period_start');
+  const targetPeriodEnd   = params.get('period_end');
+  const targetInvoiceNum  = params.get('invoice_num');
+  // 「戻る」の遷移先：単一受注（納品書発行）なら納品書一覧、期間請求書なら請求書管理へ
+  (function setBackLink(){
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.href = targetOrderId ? 'orders.html' : 'invoice-list.html';
+  })();
+  const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+  const tenantId = currentUser.tenantId;
+
+  // ===== 設定の読込（Supabase） =====
+  let _settings = {};
+
+  async function loadSettings() {
+    try {
+      const [settingsRes, banksRes] = await Promise.all([
+        sbFetch(`/rest/v1/settings?tenant_id=eq.${tenantId}&select=*&limit=1`),
+        sbFetch(`/rest/v1/tenant_bank_accounts?tenant_id=eq.${tenantId}&select=*&order=display_order.asc,created_at.asc`)
+      ]);
+      const data = settingsRes.ok ? await settingsRes.json() : [];
+      const banksData = banksRes.ok ? await banksRes.json() : [];
+      const s = (data && data[0]) || {};
+      const legacyBank = (s.bank_name || s.bank_number || s.bank_holder)
+        ? [{ bank_name: s.bank_name || '', bank_branch: s.bank_branch || '', bank_type: s.bank_type || '普通', bank_number: s.bank_number || '', bank_holder: s.bank_holder || '', bank_note: s.bank_note || '' }]
+        : [];
+      const bankAccounts = (Array.isArray(banksData) && banksData.length > 0 ? banksData : legacyBank)
+        .map(b => ({
+          bank_name: b.bank_name || '',
+          bank_branch: b.bank_branch || '',
+          bank_type: b.bank_type || '普通',
+          bank_number: b.bank_number || '',
+          bank_holder: b.bank_holder || '',
+          bank_note: b.bank_note || ''
+        }));
+      _settings = {
+        name:         s.company_name       || '',
+        person:       s.company_person     || '',
+        address:      (s.company_zip ? '〒' + s.company_zip + (s.company_address ? '\n' : '') : '') + (s.company_address || ''),
+        tel:          s.company_tel        || '',
+        fax:          s.company_fax        || '',
+        email:        s.company_email      || '',
+        invoice_num:  s.company_invoice_no || '',
+        bank_accounts: bankAccounts,
+        payment_days: s.payment_days       || 30,
+      };
+    } catch(e) {
+      console.error('設定読込エラー', e);
+    }
+    return _settings;
+  }
+
+  function renderBankBlock(bankAccounts) {
+    const banks = (bankAccounts || []).filter(b => b.bank_name || b.bank_branch || b.bank_number || b.bank_holder || b.bank_note);
+    if (banks.length === 0) return '（振込先情報を設定してください）';
+    return banks.map((bank, index) => {
+      const lines = [];
+      if (bank.bank_name || bank.bank_branch) lines.push(esc([bank.bank_name, bank.bank_branch].filter(Boolean).join(' ')));
+      if (bank.bank_type || bank.bank_number) lines.push(esc([bank.bank_type || '普通', bank.bank_number].filter(Boolean).join('  ')));
+      if (bank.bank_holder) lines.push('口座名義: ' + esc(bank.bank_holder));
+      if (bank.bank_note) lines.push(`<span style="font-size:11px;color:var(--text-muted);">${esc(bank.bank_note)}</span>`);
+      return `<div${index > 0 ? ' style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);"' : ''}>${lines.join('<br>')}</div>`;
+    }).join('');
+  }
+
+  // 1銀行=1行表記（請求書明細書の上部用）
+  // 例: 楽天銀行 ビオラ支店 普通口座 123456
+  function renderBankInline(bankAccounts) {
+    const banks = (bankAccounts || []).filter(b => b.bank_name || b.bank_branch || b.bank_number);
+    if (banks.length === 0) return '';
+    return banks.map(bank => {
+      const parts = [];
+      if (bank.bank_name) parts.push(esc(bank.bank_name));
+      if (bank.bank_branch) parts.push(esc(bank.bank_branch));
+      const type = bank.bank_type || '普通';
+      parts.push(esc(type + '口座'));
+      if (bank.bank_number) parts.push(esc(bank.bank_number));
+      return `<div>${parts.join(' ')}</div>`;
+    }).join('');
+  }
+
+  // ===== 請求書番号生成 =====
+  function generateInvoiceNo(orderId) {
+    if (orderId && /^INV-/.test(orderId)) return orderId;
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const base = orderId ? orderId.replace('ORD-', '') : String(d.getTime()).slice(-6);
+    return `INV-${y}${m}-${base}`;
+  }
+
+  // ===== 支払期限計算 =====
+  // 取引先マスタの closing_day（締め日）/ payment_month_offset（支払月オフセット）/ payment_day（支払日）から算出。
+  //   1. 受注日が含まれる「締め月」を決定（受注日が締め日を過ぎていれば翌月）
+  //   2. 支払月 = 締め月 + payment_month_offset
+  //   3. 支払日：31 を指定されたら月末扱い。月によって28/30も末日として正しく解決される
+  // 取引先情報が不完全な場合は従来の「30日後」フォールバック
+  function calcDueDate(orderDate, customerExtra) {
+    const od = orderDate ? new Date(orderDate) : new Date();
+    if (isNaN(od)) return new Date();
+
+    const hasClosing = customerExtra && customerExtra.closing_day != null;
+    const hasPayDay  = customerExtra && customerExtra.payment_day  != null;
+    if (!hasClosing || !hasPayDay) {
+      const fb = new Date(od);
+      fb.setDate(fb.getDate() + 30);
+      return fb;
+    }
+
+    const cd     = Number(customerExtra.closing_day);
+    const offset = Number(customerExtra.payment_month_offset != null ? customerExtra.payment_month_offset : 1);
+    const pd     = Number(customerExtra.payment_day);
+
+    // 締め月の決定
+    let closingMonth = od.getMonth();
+    let closingYear  = od.getFullYear();
+    const lastDayClosing = new Date(closingYear, closingMonth + 1, 0).getDate();
+    const actualClosingDay = (cd === 31) ? lastDayClosing : Math.min(cd, lastDayClosing);
+    if (od.getDate() > actualClosingDay) {
+      closingMonth += 1;
+      if (closingMonth > 11) { closingMonth = 0; closingYear += 1; }
+    }
+
+    // 支払月＝締め月＋オフセット
+    let payMonth = closingMonth + offset;
+    let payYear  = closingYear;
+    while (payMonth > 11) { payMonth -= 12; payYear += 1; }
+
+    // 支払日：31を月末として解決、それ以外もその月の最終日でクランプ
+    const lastDayPay = new Date(payYear, payMonth + 1, 0).getDate();
+    const payDay = (pd === 31) ? lastDayPay : Math.min(pd, lastDayPay);
+
+    return new Date(payYear, payMonth, payDay);
+  }
+
+  // ===== 金額フォーマット =====
+  function fmt(n) {
+    const v = Number(n || 0);
+    return v < 0 ? '-¥' + Math.abs(v).toLocaleString('ja-JP') : '¥' + v.toLocaleString('ja-JP');
+  }
+
+  // ===== 取引先住所フォーマット（郵便番号付き） =====
+  // 自社住所側と書式を揃える（1行目：〒XXX-XXXX / 2行目：住所）。
+  // postal_code が 7 桁数字なら自動で 3-4 区切りにする。
+  // 戻り値の \n は CSS white-space: pre-line で改行として表示される。
+  function formatAddressWithZip(zip, address) {
+    if (!zip && !address) return '';
+    if (!zip) return address || '';
+    const digits = String(zip).replace(/[^0-9]/g, '');
+    const formatted = digits.length === 7 ? digits.slice(0, 3) + '-' + digits.slice(3) : String(zip);
+    return '〒' + formatted + (address ? '\n' + address : '');
+  }
+
+  // ===== 納品書HTML生成 =====
+  function renderDeliveryNote(f, items, s) {
+    const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+    const isPersonal = !!f.isPersonalTrade;
+    const handlingFee = Number(f.handlingFee) || 0;
+    const shippingFee = Number(f.shippingFee) || 0;
+    const handlingCharge = !!f.handlingCharge;
+    const shippingCharge = !!f.shippingCharge;
+    const handlingQty = Number(f.handlingQty) || 1;
+    const shippingQty = Number(f.shippingQty) || 1;
+    const totals = calcInvoiceTotals(items, handlingFee * handlingQty, shippingFee * shippingQty, isPersonal, handlingCharge, shippingCharge);
+
+    const dataRows = items.length > 0
+      ? items.map(it => {
+          const qty   = Number(it['数量'] || 0);
+          const priceStored = Number(it['単価'] || 0);
+          const priceDisp = toDisplayPrice(priceStored, !!it.isFood, isPersonal);
+          const subDisp   = qty * priceDisp;
+          const taxLabel = it.isFood ? '8%' : '10%';
+          const remarks = it['備考'] || '';
+          return `<tr>
+            <td style="font-size:11px;color:var(--text-muted);font-family:'Space Grotesk',sans-serif">${esc(it['商品コード'] || '—')}</td>
+            <td>${esc(it['商品名'] || '-')}</td>
+            <td style="text-align:right">${qty.toLocaleString()}</td>
+            <td style="text-align:right">${fmt(priceDisp)}<span style="margin-left:3px;font-size:10px;color:var(--text-muted);font-weight:600">${taxMarkText(!!it.isFood, isPersonal)}</span></td>
+            <td style="text-align:right">${fmt(subDisp)}</td>
+            <td style="text-align:center;font-size:11px;color:var(--text-muted)">${taxLabel}</td>
+            <td class="remarks-cell" style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">${esc(remarks)}</td>
+          </tr>`;
+        }).join('') + buildFeeRowsInvoice(handlingFee, shippingFee, isPersonal, handlingCharge, shippingCharge, handlingQty, shippingQty)
+      : `<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">明細データがありません</td></tr>`;
+    const feeRowCount = (handlingFee > 0 ? 1 : 0) + (shippingFee > 0 ? 1 : 0);
+    const emptyCount = Math.max(0, 10 - Math.max(items.length + feeRowCount, 1));
+    const emptyRow = `<tr class="empty-row"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;
+    const itemRows = dataRows + emptyRow.repeat(emptyCount);
+
+    // TEL / FAX を1行にまとめる。同じ番号の場合は「TEL／FAX」として1つだけ表示。
+    const dTelDigits  = String(s.tel || '').replace(/[^0-9]/g, '');
+    const dFaxDigits  = String(s.fax || '').replace(/[^0-9]/g, '');
+    const dSameTelFax = dTelDigits && dFaxDigits && dTelDigits === dFaxDigits;
+    let dContactLine = '';
+    if (dSameTelFax) {
+      dContactLine = `<div style="font-size:12px;color:var(--text-muted)">TEL／FAX: ${esc(s.tel)}</div>`;
+    } else if (s.tel && s.fax) {
+      dContactLine = `<div style="font-size:12px;color:var(--text-muted)">TEL: ${esc(s.tel)}　／　FAX: ${esc(s.fax)}</div>`;
+    } else if (s.tel) {
+      dContactLine = `<div style="font-size:12px;color:var(--text-muted)">TEL: ${esc(s.tel)}</div>`;
+    } else if (s.fax) {
+      dContactLine = `<div style="font-size:12px;color:var(--text-muted)">FAX: ${esc(s.fax)}</div>`;
+    }
+
+    const fromBlock = s.name
+      ? `<div style="font-size:15px;font-weight:700;font-family:'Noto Serif JP',serif">${esc(s.name)}</div>
+         ${s.person ? `<div style="font-size:12px;margin-top:2px">${esc(s.person)}</div>` : ''}
+         ${s.address ? `<div style="font-size:12px;color:var(--text-muted);white-space:pre-line">${esc(s.address)}</div>` : ''}
+         ${dContactLine}
+         ${s.invoice_num ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">適格請求書番号: ${esc(s.invoice_num)}</div>` : ''}`
+      : `<div style="color:#aaa;font-size:13px;">⚙ 発行者情報を設定してください</div>`;
+
+    document.getElementById('deliveryBody').innerHTML = `
+      <div class="invoice-header">
+        <div class="invoice-title-block">
+          <div class="invoice-title">納 品 書</div>
+          <div class="invoice-subtitle">DELIVERY NOTE</div>
+        </div>
+        <div class="invoice-meta">
+          <table>
+            <tr><td>納品日</td><td>${esc(today)}</td></tr>
+            ${f['受注ID'] ? `<tr><td>受注ID</td><td>${esc(f['受注ID'])}</td></tr>` : ''}
+          </table>
+        </div>
+      </div>
+      <div class="invoice-parties">
+        <div class="invoice-to">
+          <div class="party-label">納品先 / DELIVER TO</div>
+          <div class="party-name">${esc(f['取引先名'] || '取引先名')}<span class="party-name-suffix">御中</span></div>
+          ${f['担当者名'] ? `<div class="party-address">${esc(f['担当者名'])} 様</div>` : ''}
+          ${f['住所'] ? `<div class="party-address" style="font-size:12px;color:var(--text-muted)">${esc(f['住所'])}</div>` : ''}
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">発行者 / ISSUED BY</div>
+          ${fromBlock}
+        </div>
+      </div>
+      <div class="invoice-table-wrap">
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th style="width:74px">商品コード</th>
+              <th>商品名</th>
+              <th style="text-align:right;width:48px">数量</th>
+              <th style="text-align:right;width:80px">単価</th>
+              <th style="text-align:right;width:84px">金額</th>
+              <th style="text-align:center;width:38px">税率</th>
+              <th style="width:90px">備考</th>
+            </tr>
+          </thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+        <div class="totals-row">
+          <div class="totals-notes-box">
+            <div class="totals-notes-label">備考 / NOTES</div>
+            <textarea class="totals-notes-textarea" id="deliveryNotesTextarea" maxlength="200" placeholder="（任意）" onblur="saveDeliveryNotes()">${esc(f['備考'] || '')}</textarea>
+          </div>
+          <table class="totals-summary-table">
+            ${buildInvoiceTotalsRows(totals, isPersonal, '合計（税込）')}
+          </table>
+        </div>
+      </div>
+    `;
+    fitPartyName(document.getElementById('deliveryBody'));
+  }
+
+  // 取引先名が長くて2行にならないよう、収まるまで段階的にフォントサイズを縮小
+  function fitPartyName(scope) {
+    const partyNames = (scope || document).querySelectorAll('.party-name');
+    const sizes = [22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10];
+    partyNames.forEach(el => {
+      for (let i = 0; i < sizes.length; i++) {
+        el.style.fontSize = sizes[i] + 'px';
+        if (el.scrollWidth <= el.clientWidth + 1) break;
+      }
+    });
+  }
+
+  // ===== 請求書HTML生成 =====
+  // periodGroups: 期間請求書（請求明細書）モードのみ指定。受注（日付）ごとの
+  //   { date, items[], handlingFee, shippingFee, handlingCharge, shippingCharge, handlingQty, shippingQty }
+  //   の配列。指定時は先頭列を「日付」にし、各受注の商品行の直後にその受注の送料・手数料行を出す。
+  function renderInvoice(order, items, showDelivery = true, prevInvoice = null, currentInvoice = null, periodGroups = null) {
+    window._orderData = { order, items };
+    const isPeriod = Array.isArray(periodGroups) && periodGroups.length > 0;
+    const s = _settings;
+    const f = order.fields || order;
+    const isPersonal = !!f.isPersonalTrade;
+    const handlingFee = Number(f.handlingFee) || 0;
+    const shippingFee = Number(f.shippingFee) || 0;
+    const handlingCharge = !!f.handlingCharge;
+    const shippingCharge = !!f.shippingCharge;
+    const handlingQty = Number(f.handlingQty) || 1;
+    const shippingQty = Number(f.shippingQty) || 1;
+
+    const invoiceNo = generateInvoiceNo(f['受注ID']);
+    const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+    const dueDate = calcDueDate(f['受注日'], {
+      closing_day:          f['締め日'],
+      payment_month_offset: f['支払月オフセット'],
+      payment_day:          f['支払日']
+    }).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    // 明細から合計を再計算（8%/10% 自動判定・手数料/送料の加算/控除込み・数量込み）
+    // 期間請求書（請求明細書）は受注ごとのグループから合算。それ以外は従来どおり items から。
+    const totals = isPeriod
+      ? calcPeriodTotals(periodGroups, isPersonal)
+      : calcInvoiceTotals(items, handlingFee * handlingQty, shippingFee * shippingQty, isPersonal, handlingCharge, shippingCharge);
+    const subtotal = totals.subtotal;
+    const tax = totals.tax;
+    const total = totals.total;
+
+    // 受注日（YYYY-MM-DD）を明細の先頭列向けに M/D へ整形
+    const fmtItemDate = (d) => {
+      if (!d) return '—';
+      const p = String(d).split('-');
+      return p.length >= 3 ? `${Number(p[1])}/${Number(p[2])}` : esc(String(d));
+    };
+    // 1商品行のHTML（先頭列に first を表示：通常=商品コード／請求明細書=日付）
+    const buildItemRow = (it, first) => {
+      const qty = Number(it['数量'] || 0);
+      const priceStored = Number(it['単価'] || 0);
+      const priceDisp = toDisplayPrice(priceStored, !!it.isFood, isPersonal);
+      const subDisp = qty * priceDisp;
+      const rate = it.isFood ? '8%' : '10%';
+      const remarks = it['備考'] || '';
+      return `
+            <tr>
+              <td style="font-size:11px;color:var(--text-muted);font-family:'Space Grotesk',sans-serif">${first}</td>
+              <td>${esc(it['商品名'] || '-')}</td>
+              <td style="text-align:right">${qty.toLocaleString()}</td>
+              <td style="text-align:right">${fmt(priceDisp)}<span style="margin-left:3px;font-size:10px;color:var(--text-muted);font-weight:600">${taxMarkText(!!it.isFood, isPersonal)}</span></td>
+              <td style="text-align:right">${fmt(subDisp)}</td>
+              <td style="text-align:center;font-size:11px;color:var(--text-muted)">${rate}</td>
+              <td class="remarks-cell" style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">${esc(remarks)}</td>
+            </tr>`;
+    };
+
+    // 明細行
+    let dataRows, renderedRowCount;
+    if (isPeriod) {
+      // 請求明細書：受注（日付）ごとに［その日の商品行 → その受注の送料・手数料行］を繰り返す
+      renderedRowCount = 0;
+      const blocks = periodGroups.map(g => {
+        const ds = fmtItemDate(g.date);
+        const itemHtml = (g.items || []).map(it => buildItemRow(it, ds)).join('');
+        const feeHtml = buildFeeRowsInvoice(g.handlingFee, g.shippingFee, isPersonal, g.handlingCharge, g.shippingCharge, g.handlingQty, g.shippingQty);
+        const feeCount = ((Number(g.handlingFee)||0) > 0 ? 1 : 0) + ((Number(g.shippingFee)||0) > 0 ? 1 : 0);
+        renderedRowCount += (g.items || []).length + feeCount;
+        return itemHtml + feeHtml;
+      }).join('');
+      dataRows = renderedRowCount > 0
+        ? blocks
+        : `<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">明細データがありません</td></tr>`;
+    } else {
+      dataRows = items.length > 0
+        ? items.map(it => buildItemRow(it, esc(it['商品コード'] || '—'))).join('') + buildFeeRowsInvoice(handlingFee, shippingFee, isPersonal, handlingCharge, shippingCharge, handlingQty, shippingQty)
+        : `<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">明細データがありません</td></tr>`;
+      const feeRowCount = (handlingFee > 0 ? 1 : 0) + (shippingFee > 0 ? 1 : 0);
+      renderedRowCount = items.length + feeRowCount;
+    }
+    const emptyCount = Math.max(0, 10 - Math.max(renderedRowCount, 1));
+    const emptyRow = `<tr class="empty-row"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;
+    const itemRows = dataRows + emptyRow.repeat(emptyCount);
+
+    // TEL / FAX を1行にまとめる。同じ番号の場合は「TEL／FAX」として1つだけ表示。
+    const iTelDigits  = String(s.tel || '').replace(/[^0-9]/g, '');
+    const iFaxDigits  = String(s.fax || '').replace(/[^0-9]/g, '');
+    const iSameTelFax = iTelDigits && iFaxDigits && iTelDigits === iFaxDigits;
+    let iContactLine = '';
+    if (iSameTelFax) {
+      iContactLine = `<div>TEL／FAX: ${esc(s.tel)}</div>`;
+    } else if (s.tel && s.fax) {
+      iContactLine = `<div>TEL: ${esc(s.tel)}　／　FAX: ${esc(s.fax)}</div>`;
+    } else if (s.tel) {
+      iContactLine = `<div>TEL: ${esc(s.tel)}</div>`;
+    } else if (s.fax) {
+      iContactLine = `<div>FAX: ${esc(s.fax)}</div>`;
+    }
+
+    // 発行者情報
+    const fromBlock = s.name
+      ? `<div class="from-name">${esc(s.name)}</div>
+         ${s.person ? `<div>${esc(s.person)}</div>` : ''}
+         ${s.address ? `<div style="white-space:pre-line">${esc(s.address)}</div>` : ''}
+         ${iContactLine}
+         ${s.email ? `<div>${esc(s.email)}</div>` : ''}
+         ${s.invoice_num ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">適格請求書番号: ${esc(s.invoice_num)}</div>` : ''}`
+      : `<div style="color:#aaa;font-size:13px;">⚙ 発行者情報を設定してください</div>`;
+
+    document.getElementById('invoiceBody').innerHTML = `
+      <div class="invoice-header">
+        <div class="invoice-title-block">
+          <div class="invoice-title">請 求 書</div>
+          <div class="invoice-subtitle">INVOICE</div>
+        </div>
+        <div class="invoice-meta">
+          <table>
+            <tr><td>請求書番号</td><td>${esc(invoiceNo)}</td></tr>
+            <tr><td>発行日</td><td>${esc(today)}</td></tr>
+            <tr><td>締め日</td><td>${f['締め日'] != null ? (Number(f['締め日']) === 31 ? '毎月月末締め' : '毎月' + esc(String(f['締め日'])) + '日締め') : '<span style="color:#dc2626;font-size:11px">未設定（取引先マスタで設定してください）</span>'}</td></tr>
+            <tr><td>お支払い期限</td><td>${esc(dueDate)}</td></tr>
+            ${f['受注ID'] ? `<tr><td>受注ID</td><td>${esc(f['受注ID'])}</td></tr>` : ''}
+          </table>
+        </div>
+      </div>
+
+      <div class="invoice-parties" style="margin-bottom:18px;">
+        <div class="invoice-to">
+          <div class="party-label">請求先 / BILL TO</div>
+          <div class="party-name" style="font-size:19px;">${esc(f['取引先名'] || '取引先名')}</div>
+          ${f['住所'] ? `<div class="party-address">${esc(f['住所'])}</div>` : ''}
+        </div>
+        <div style="text-align:right;">
+          <div class="footer-section-title" style="margin-bottom:6px;">発行者 / ISSUED BY</div>
+          <div class="invoice-from">${fromBlock}</div>
+        </div>
+      </div>
+
+      ${!showDelivery ? (() => {
+        // 振込先（請求書明細書モードのみ表示。納品書ペアの請求書には表示しない）
+        const inline = renderBankInline(s.bank_accounts);
+        return inline ? `
+      <div class="invoice-bank-inline" style="margin-bottom:14px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+        <div class="footer-section-title" style="margin-bottom:6px;">お振込先 / BANK TRANSFER</div>
+        <div style="font-size:13px;line-height:1.8;font-family:'Noto Sans JP',sans-serif;">${inline}</div>
+      </div>` : '';
+      })() : ''}
+
+      ${!showDelivery ? `
+      <div class="billing-summary" id="billingSummary">
+        <div class="summary-cells">
+          <div class="summary-cell">
+            <div class="summary-cell-label">前回御請求額</div>
+            <div class="summary-cell-value" id="sumPrev">—</div>
+            <div class="no-print" id="editPrevWrap" style="display:none;margin-top:4px;text-align:right">
+              <button onclick="editManualPrevAmount()" title="MeguRee 導入時の手入力値を修正します" style="font-size:11px;background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;color:var(--text-muted);font-family:inherit">✏️ 修正</button>
+            </div>
+          </div>
+          <div class="summary-cell">
+            <div class="summary-cell-label">御入金金額</div>
+            <div class="summary-cell-value" id="sumPaid" onclick="startEditPaid()" title="クリックで編集" style="cursor:pointer;">—</div>
+            <div class="no-print" style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:4px;min-height:18px;">
+              <span id="paidSaveMsg" style="font-size:12px;font-weight:600;opacity:0;transition:opacity 0.3s;color:var(--green)"></span>
+            </div>
+          </div>
+          <div class="summary-cell">
+            <div class="summary-cell-label">繰越金額</div>
+            <div class="summary-cell-value" id="sumCarry">—</div>
+          </div>
+          <div class="summary-cell">
+            <div class="summary-cell-label">今回御買上額</div>
+            <div class="summary-cell-value" id="sumThisTotal">—</div>
+          </div>
+          <div class="summary-cell">
+            <div class="summary-cell-label">税抜御買上額</div>
+            <div class="summary-cell-value" id="sumExcl">—</div>
+          </div>
+          <div class="summary-cell">
+            <div class="summary-cell-label">消費税</div>
+            <div class="summary-cell-value" id="sumTax">—</div>
+          </div>
+        </div>
+        <div class="summary-total-box">
+          <div class="summary-total-label">今回御請求額</div>
+          <div class="summary-total-value" id="sumGrandTotal">—</div>
+        </div>
+      </div>` : ''}
+
+      <div class="invoice-table-wrap">
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th style="width:74px">${isPeriod ? '日付' : '商品コード'}</th>
+              <th>商品名</th>
+              <th style="text-align:right;width:48px">数量</th>
+              <th style="text-align:right;width:80px">単価</th>
+              <th style="text-align:right;width:84px">金額</th>
+              <th style="text-align:center;width:38px">税率</th>
+              <th style="width:90px">備考</th>
+            </tr>
+          </thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+        <div class="totals-row">
+          <div class="totals-notes-box">
+            <div class="totals-notes-label">備考 / NOTES</div>
+            <textarea class="totals-notes-textarea" id="invoiceNotesTextarea" maxlength="200" placeholder="（任意）" onblur="saveInvoiceNotes()">${esc(f['備考'] || '')}</textarea>
+          </div>
+          <table class="totals-summary-table">
+            ${buildInvoiceTotalsRows(totals, isPersonal, '合計（税込）')}
+          </table>
+        </div>
+      </div>
+    `;
+
+    // 前回請求額の決定:
+    //   - 前回請求書があればそれを使う（通常運用）
+    //   - 無く、かつ初回手入力 (manual_prev_amount) があればそれを使う（MeguRee 導入時）
+    const manualPrev = currentInvoice ? currentInvoice.manual_prev_amount : null;
+    const effectivePrev = (prevInvoice && prevInvoice.total_incl_tax != null)
+      ? prevInvoice.total_incl_tax
+      : (manualPrev != null ? manualPrev : null);
+    const isFirstInvoice = !prevInvoice;
+
+    // 合計をグローバルに保存（updateBillingSummary用）
+    // currentPaidAmount = 今表示中の請求書への入金額（編集対象）
+    // prevPaidAmount    = 前回請求書への入金額（繰越金計算に使用）
+    // manualPrevAmount  = 初回入力された前回請求額（編集ボタン表示判定）
+    // isFirstInvoice    = この取引先の初回請求書か（編集ボタン表示判定）
+    window._invoiceTotals = {
+      subtotal, tax, total,
+      excl8:  totals.excl8,  excl10: totals.excl10,
+      tax8:   totals.tax8,   tax10:  totals.tax10,
+      incl8:  totals.incl8,  incl10: totals.incl10,
+      isPersonal,
+      currentPaidAmount: currentInvoice != null ? currentInvoice.paid_amount : undefined,
+      prevPaidAmount: prevInvoice != null ? prevInvoice.paid_amount : undefined,
+      manualPrevAmount: manualPrev,
+      isFirstInvoice
+    };
+
+    // 前回請求額を操作バーにセット（表示のみ・readonly）
+    const prevEl = document.getElementById('prevAmountInput');
+    if (prevEl) prevEl.value = effectivePrev != null ? formatYen(effectivePrev) : '';
+
+    // 入金保存対象 = 今表示中の請求書（御入金金額欄に入力した値はこの請求書に保存される）
+    window._currentInvoiceNum = targetInvoiceNum || null;
+    // 参考: 前回請求書の番号も保持（将来の機能拡張用）
+    window._prevInvoiceNum = prevInvoice?.invoice_number || null;
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('invoiceBody').style.display = 'block';
+    if (showDelivery) {
+      // 納品書兼請求書モード：請求サマリ関連UIを非表示
+      const prevWrap = document.getElementById('prevAmountWrap');
+      if (prevWrap) prevWrap.style.display = 'none';
+
+      document.getElementById('deliveryBody').style.display = 'block';
+      document.body.classList.add('delivery-mode');
+      document.title = `納品書兼請求書 - ${f['取引先名'] || '取引先'} - ${invoiceNo}`;
+      renderDeliveryNote(f, items, s);
+    } else {
+      document.body.classList.remove('delivery-mode');
+      document.title = `請求書 - ${f['取引先名'] || '取引先'} - ${invoiceNo}`;
+      updateBillingSummary();
+    }
+    // 取引先名が長い場合に2行にならないよう、収まるまで縮小
+    fitPartyName(document.getElementById('invoiceBody'));
+  }
+
+  // 御入金金額の現在値（メモリ保持・編集中はnull可）
+  let _paidAmountValue = null;
+
+  function updateBillingSummary() {
+    const t = window._invoiceTotals;
+    if (!t) return;
+    const prevAmount = Number(yenDigits(document.getElementById('prevAmountInput')?.value)) || 0;
+    // 御入金金額 = 今表示中の請求書への入金額（編集対象）
+    const sumPaidEl = document.getElementById('sumPaid');
+    const editingInput = sumPaidEl ? sumPaidEl.querySelector('input') : null;
+    let paidAmount;
+    if (editingInput) {
+      const v = Number(yenDigits(editingInput.value));
+      paidAmount = !isNaN(v) ? v : null;
+    } else if (_paidAmountValue != null) {
+      paidAmount = _paidAmountValue;
+    } else {
+      paidAmount = t.currentPaidAmount;
+    }
+    if (paidAmount != null && !isNaN(paidAmount)) _paidAmountValue = paidAmount;
+
+    // 繰越金 = 前回御請求額 − 御入金金額
+    // 御入金金額は「過去の未払い分を消し込んだ金額」として扱い、編集中の入力値も即時反映。
+    // マイナスになる場合は 0 にクランプ（前払い分は預り金として別管理する想定）。
+    const subtractPaid = (paidAmount != null && !isNaN(paidAmount)) ? paidAmount : 0;
+    const carryOver = Math.max(0, prevAmount - subtractPaid);
+    const grandTotal = carryOver + t.total;
+
+    document.getElementById('sumPrev').textContent      = fmt(prevAmount);
+    // 御入金金額：編集中でなければ他セルと同じ span 表示
+    if (sumPaidEl && !editingInput) {
+      sumPaidEl.textContent = (paidAmount != null && !isNaN(paidAmount)) ? fmt(paidAmount) : '—';
+      sumPaidEl.style.color = (paidAmount == null || isNaN(paidAmount)) ? '#dc2626' : '';
+    }
+    document.getElementById('sumCarry').textContent     = fmt(carryOver);
+    document.getElementById('sumThisTotal').textContent = fmt(t.total);
+    // 個人取引：「税抜御買上額」「消費税」を「8%軽減込ケコ」「10%対象込コ」表示に置換（消費税計算なし）
+    const sumExclEl = document.getElementById('sumExcl');
+    const sumTaxEl  = document.getElementById('sumTax');
+    if (sumExclEl && sumTaxEl) {
+      const exclLabelEl = sumExclEl.parentElement?.querySelector('.summary-cell-label');
+      const taxLabelEl  = sumTaxEl.parentElement?.querySelector('.summary-cell-label');
+      if (t.isPersonal) {
+        if (exclLabelEl) exclLabelEl.textContent = '8%軽減込ケコ';
+        if (taxLabelEl)  taxLabelEl.textContent  = '10%対象込コ';
+        sumExclEl.textContent = fmt(t.excl8 || 0);
+        sumTaxEl.textContent  = fmt(t.excl10 || 0);
+      } else {
+        if (exclLabelEl) exclLabelEl.textContent = '税抜御買上額';
+        if (taxLabelEl)  taxLabelEl.textContent  = '消費税';
+        sumExclEl.textContent = fmt(t.subtotal);
+        sumTaxEl.textContent  = fmt(t.tax);
+      }
+    }
+    document.getElementById('sumGrandTotal').textContent = fmt(grandTotal);
+
+    // 初回請求書（前回請求書なし＋手入力された前回請求額あり）の時だけ「✏️ 修正」ボタン表示
+    const editPrevWrap = document.getElementById('editPrevWrap');
+    if (editPrevWrap) {
+      editPrevWrap.style.display = (t.isFirstInvoice && t.manualPrevAmount != null) ? 'block' : 'none';
+    }
+  }
+
+  // ===== 初回前回請求額の修正（MeguRee 導入時の手入力値）=====
+  async function editManualPrevAmount() {
+    const t = window._invoiceTotals;
+    if (!t || !t.isFirstInvoice) return;
+    const current = t.manualPrevAmount != null ? t.manualPrevAmount : 0;
+    const ans = prompt(
+      'MeguRee 導入時の「前回請求額」を入力し直してください（円）：',
+      String(current)
+    );
+    if (ans === null) return;
+    const newVal = Number(String(ans).replace(/[^0-9]/g, '')) || 0;
+    if (newVal === current) return;
+
+    const currentNum = window._currentInvoiceNum;
+    if (!currentNum) { alert('請求書が特定できません'); return; }
+
+    const res = await sbFetch(
+      '/rest/v1/invoices?invoice_number=eq.' + encodeURIComponent(currentNum),
+      { method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ manual_prev_amount: newVal }) }
+    );
+    if (!res.ok) { alert('保存失敗'); return; }
+
+    t.manualPrevAmount = newVal;
+    const prevEl = document.getElementById('prevAmountInput');
+    if (prevEl) prevEl.value = formatYen(newVal);
+    updateBillingSummary();
+
+    // 操作履歴に記録
+    try {
+      await sbFetch('/rest/v1/audit_log', {
+        method: 'POST',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          user_name: currentUser?.name || '—',
+          action: 'update',
+          table_name: 'invoices',
+          record_id: currentNum,
+          record_label: `${currentNum} 初回前回請求額を修正`,
+          old_values: { manual_prev_amount: current },
+          new_values: { manual_prev_amount: newVal }
+        })
+      });
+    } catch(e) { console.warn('audit_log書き込み失敗:', e); }
+
+    alert('保存しました');
+  }
+
+  // ===== クリックで編集モードに切り替え =====
+  function startEditPaid() {
+    const cell = document.getElementById('sumPaid');
+    if (!cell || cell.querySelector('input')) return;
+    const current = _paidAmountValue != null ? Number(_paidAmountValue).toLocaleString('en-US') : '';
+    cell.style.cursor = 'text';
+    cell.innerHTML = `<span style="display:inline-flex;align-items:baseline;gap:0;">¥<input type="text" id="sumPaidInput" inputmode="numeric" value="${current}" oninput="onYenInput(this);onPaidInputChange();" onblur="endEditPaid()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" style="background:transparent;border:none;border-bottom:1.5px dashed var(--orange);font:inherit;color:inherit;outline:none;padding:0;margin:0;text-align:left;box-sizing:content-box;min-width:0;"></span>`;
+    const input = cell.querySelector('input');
+    const setWidth = () => { input.style.width = Math.max(input.value.length, 1) + 'ch'; };
+    setWidth();
+    input.focus();
+    input.select();
+  }
+
+  // 入力中：幅追従＋繰越金・今回御請求額の即時再計算
+  function onPaidInputChange() {
+    const paidEl = document.getElementById('sumPaidInput');
+    if (!paidEl) return;
+    paidEl.style.width = Math.max((paidEl.value || '').length, 1) + 'ch';
+    updateBillingSummary();
+  }
+
+  // ===== 編集終了：保存して span 表示に戻す =====
+  async function endEditPaid() {
+    const input = document.getElementById('sumPaidInput');
+    if (!input) return;
+    const raw = yenDigits(input.value);
+    const numVal = raw === '' ? null : Number(raw);
+    const isValid = numVal != null && !isNaN(numVal) && numVal >= 0;
+    // 値が前回保存値と同じなら DB アクセス不要
+    const prevSaved = window._invoiceTotals ? window._invoiceTotals.currentPaidAmount : null;
+    if (isValid && numVal !== prevSaved) {
+      _paidAmountValue = numVal;
+      await savePaidAmount(numVal);
+    } else if (!isValid) {
+      // 不正値は前回値に戻す
+      _paidAmountValue = prevSaved;
+    }
+    updateBillingSummary();
+  }
+
+  // ===== 御入金金額の登録（今表示中の請求書へ保存） =====
+  async function savePaidAmount(numVal) {
+    const currentNum = window._currentInvoiceNum;
+    const msg = document.getElementById('paidSaveMsg');
+    const showMsg = (text, color) => {
+      if (!msg) return;
+      msg.textContent = text;
+      msg.style.color = color;
+      msg.style.opacity = '1';
+      setTimeout(() => { msg.style.opacity = '0'; }, 2500);
+    };
+    if (!currentNum) { showMsg('請求書が特定できません', '#dc2626'); return; }
+    if (numVal == null || isNaN(numVal) || numVal < 0) { showMsg('⚠ 金額を確認してください', '#dc2626'); return; }
+    const res = await sbFetch(
+      '/rest/v1/invoices?invoice_number=eq.' + encodeURIComponent(currentNum),
+      { method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ paid_amount: numVal }) }
+    );
+    if (res.ok) {
+      if (window._invoiceTotals) window._invoiceTotals.currentPaidAmount = numVal;
+      showMsg('✓ 保存しました', 'var(--green)');
+    } else {
+      showMsg('❌ 保存失敗', '#dc2626');
+    }
+  }
+
+  // ===== 備考の自動保存（onblur） =====
+  // 納品書側：orders.notes へ
+  async function saveDeliveryNotes() {
+    const el = document.getElementById('deliveryNotesTextarea');
+    if (!el) return;
+    const orderId = window._currentOrderId;
+    if (!orderId) return;
+    const v = (el.value || '').trim();
+    try {
+      const res = await sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ notes: v || null })
+      });
+      if (!res.ok) console.error('納品書備考の保存に失敗', await res.text());
+    } catch (e) { console.error('納品書備考の保存に失敗', e); }
+  }
+  // 請求書側：
+  //   - 期間請求書モード（_currentInvoiceId あり）→ invoices.notes
+  //   - 単一受注モード（_currentOrderId のみ）→ orders.notes
+  async function saveInvoiceNotes() {
+    const el = document.getElementById('invoiceNotesTextarea');
+    if (!el) return;
+    const v = (el.value || '').trim();
+    try {
+      if (window._currentInvoiceId) {
+        const res = await sbFetch(`/rest/v1/invoices?id=eq.${encodeURIComponent(window._currentInvoiceId)}`, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ notes: v || null })
+        });
+        if (!res.ok) console.error('請求書備考の保存に失敗', await res.text());
+      } else if (window._currentOrderId) {
+        const res = await sbFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(window._currentOrderId)}`, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ notes: v || null })
+        });
+        if (!res.ok) console.error('請求書備考の保存に失敗', await res.text());
+      }
+    } catch (e) { console.error('請求書備考の保存に失敗', e); }
+  }
+
+  // ===== データ取得（Supabase）=====
+  async function loadInvoiceData() {
+    try {
+      let orders;
+
+      if (targetCustomerId && targetPeriodStart && targetPeriodEnd) {
+        // ── 期間請求書モード（invoice-list.html の PDF ボタンから） ──
+        const res = await sbFetch(
+          '/rest/v1/orders?customer_id=eq.' + encodeURIComponent(targetCustomerId) +
+          '&order_date=gte.' + targetPeriodStart + '&order_date=lte.' + targetPeriodEnd +
+          '&select=id,order_code,order_date,is_personal_trade,handling_fee,shipping_fee,handling_fee_charge,shipping_fee_charge,handling_fee_qty,shipping_fee_qty,customers(company_name,contact_name,is_personal_trade),order_items(quantity,unit_price,remarks,products(product_code,product_name,is_food))' +
+          '&order=order_date.asc&order_items.order=display_order.asc'
+        );
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        orders = await res.json();
+
+        if (!orders || orders.length === 0) {
+          document.getElementById('loadingState').innerHTML = '<div style="padding:80px;text-align:center;color:#999;">対象期間に受注データがありませんでした</div>';
+          return;
+        }
+
+        // 全受注の明細を結合
+        const firstOrder = orders[0];
+
+        // 取引先詳細・前回請求書・現在の請求書（明細スナップショット込み）を並行取得
+        const [custRes, prevRes, curRes] = await Promise.all([
+          sbFetch('/rest/v1/customers?id=eq.' + encodeURIComponent(targetCustomerId) + '&select=postal_code,address,closing_day,payment_month_offset,payment_day&limit=1'),
+          sbFetch(
+            '/rest/v1/invoices?customer_id=eq.' + encodeURIComponent(targetCustomerId) +
+            '&period_end=lt.' + encodeURIComponent(targetPeriodEnd) +
+            '&cancelled_at=is.null' +
+            '&select=invoice_number,total_incl_tax,paid_amount,period_end&order=period_end.desc&limit=1'
+          ),
+          targetInvoiceNum
+            ? sbFetch('/rest/v1/invoices?invoice_number=eq.' + encodeURIComponent(targetInvoiceNum) + '&select=id,paid_amount,manual_prev_amount,notes,is_personal_trade,handling_fee,shipping_fee,handling_fee_charge,shipping_fee_charge,invoice_items(product_code,product_name,quantity,unit_price,subtotal,is_food,remarks,display_order)&limit=1')
+            : Promise.resolve(null),
+        ]);
+
+        let customerExtra = {};
+        if (custRes.ok) { const d = await custRes.json(); customerExtra = d[0] || {}; }
+
+        let prevInvoice = null;
+        if (prevRes.ok) { const d = await prevRes.json(); prevInvoice = d[0] || null; }
+
+        let currentInvoicePaidAmount = null;
+        let currentInvoiceManualPrev = null;
+        let currentInvoiceNotes = '';
+        let snapshotItems = [];
+        let currentIsPersonal = null;
+        let currentHandlingFee = null;
+        let currentShippingFee = null;
+        let currentHandlingCharge = false;
+        let currentShippingCharge = false;
+        if (curRes && curRes.ok) {
+          const d = await curRes.json();
+          if (d[0]) {
+            currentInvoicePaidAmount = d[0].paid_amount;
+            currentInvoiceManualPrev = d[0].manual_prev_amount;
+            currentInvoiceNotes = d[0].notes || '';
+            window._currentInvoiceId = d[0].id;
+            snapshotItems = (d[0].invoice_items || []).slice().sort((a,b) => (a.display_order||0) - (b.display_order||0));
+            currentIsPersonal = !!d[0].is_personal_trade;
+            currentHandlingFee = Number(d[0].handling_fee) || 0;
+            currentShippingFee = Number(d[0].shipping_fee) || 0;
+            currentHandlingCharge = !!d[0].handling_fee_charge;
+            currentShippingCharge = !!d[0].shipping_fee_charge;
+          }
+        }
+
+        const currentInvoice = targetInvoiceNum ? { invoice_number: targetInvoiceNum, paid_amount: currentInvoicePaidAmount, manual_prev_amount: currentInvoiceManualPrev, notes: currentInvoiceNotes } : null;
+
+        // 個人取引フラグ・手数料・送料：発行済 invoices のスナップショットを優先、
+        // 無ければ期間内 orders を集計。向き（＋/−）が受注ごとに混在しうるため、
+        // 各受注の符号付き合計（正味）を取り、金額は絶対値・向きは正味の符号で表す（表示は1行の正味）。
+        const netHandling = (orders || []).reduce((s, o) => s + ((o.handling_fee_charge ? 1 : -1) * (Number(o.handling_fee) || 0) * (Number(o.handling_fee_qty) || 1)), 0);
+        const netShipping = (orders || []).reduce((s, o) => s + ((o.shipping_fee_charge ? 1 : -1) * (Number(o.shipping_fee) || 0) * (Number(o.shipping_fee_qty) || 1)), 0);
+        const periodHandlingFee   = currentHandlingFee != null ? currentHandlingFee : Math.abs(netHandling);
+        const periodShippingFee   = currentShippingFee != null ? currentShippingFee : Math.abs(netShipping);
+        const periodHandlingCharge = currentHandlingFee != null ? currentHandlingCharge : (netHandling > 0);
+        const periodShippingCharge = currentShippingFee != null ? currentShippingCharge : (netShipping > 0);
+        const periodIsPersonal = currentIsPersonal != null ? currentIsPersonal
+          : !!((orders[0] && (orders[0].is_personal_trade ?? orders[0].customers?.is_personal_trade)));
+
+        const f = {
+          '受注ID':   targetInvoiceNum || '',
+          '取引先名': firstOrder.customers?.company_name || '',
+          '担当者名': firstOrder.customers?.contact_name || '',
+          '受注日':   targetPeriodEnd || '',
+          '住所':     formatAddressWithZip(customerExtra.postal_code, customerExtra.address),
+          '締め日':   customerExtra.closing_day != null ? customerExtra.closing_day : null,
+          '支払月オフセット': customerExtra.payment_month_offset != null ? customerExtra.payment_month_offset : null,
+          '支払日':   customerExtra.payment_day != null ? customerExtra.payment_day : null,
+          '備考':     currentInvoiceNotes,
+          isPersonalTrade: periodIsPersonal,
+          handlingFee:    periodHandlingFee,
+          shippingFee:    periodShippingFee,
+          handlingCharge: periodHandlingCharge,
+          shippingCharge: periodShippingCharge,
+          handlingQty:    1,
+          shippingQty:    1,
+        };
+        // 請求明細書：受注（日付）ごとのグループに組み替える。
+        // 各グループ＝その受注日の商品行＋その受注の送料・手数料（符号・数量込み）。
+        // orders は order_date.asc で取得済みなので、グループ自体が受注順（日付昇順）に並ぶ。
+        const groups = orders.map(o => ({
+          date: o.order_date || '',
+          items: (o.order_items || []).map(it => ({
+            '商品コード': it.products?.product_code || '',
+            '商品名': it.products?.product_name || '',
+            '数量':   it.quantity || 0,
+            '単価':   it.unit_price || 0,
+            '小計':   (it.quantity || 0) * (it.unit_price || 0),
+            isFood:   it.products?.is_food || false,
+            '備考':   it.remarks || '',
+          })),
+          handlingFee:    Number(o.handling_fee) || 0,
+          shippingFee:    Number(o.shipping_fee) || 0,
+          handlingCharge: !!o.handling_fee_charge,
+          shippingCharge: !!o.shipping_fee_charge,
+          handlingQty:    Number(o.handling_fee_qty) || 1,
+          shippingQty:    Number(o.shipping_fee_qty) || 1,
+        }));
+
+        // 既発行（スナップショットあり）は発行時点の凍結値を優先。スナップショットは
+        // 発行時に orders を order_date.asc → display_order.asc でフラット化して採番しているため、
+        // ここで再構築したグループの商品行と同順。件数一致時のみ位置対応で上書きする
+        // （件数が違う＝発行後に受注を編集した等の場合は、ズレ防止のため上書きしない）。
+        let flatCount = 0;
+        groups.forEach(g => { flatCount += g.items.length; });
+        if (snapshotItems.length > 0 && snapshotItems.length === flatCount) {
+          let idx = 0;
+          groups.forEach(g => {
+            g.items = g.items.map(it => {
+              const snap = snapshotItems[idx++];
+              return {
+                '商品コード': snap.product_code || it['商品コード'] || '',
+                '商品名':     snap.product_name || '',
+                '数量':       snap.quantity || 0,
+                '単価':       snap.unit_price || 0,
+                '小計':       snap.subtotal != null ? snap.subtotal : (snap.quantity || 0) * (snap.unit_price || 0),
+                isFood:       !!snap.is_food,
+                '備考':       snap.remarks || '',
+              };
+            });
+          });
+        } else if (snapshotItems.length > 0) {
+          console.warn('請求明細書: スナップショット件数(' + snapshotItems.length + ')と受注明細件数(' + flatCount + ')が不一致のため凍結値の上書きをスキップしました');
+        }
+
+        const allItems = groups.flatMap(g => g.items);
+
+        renderInvoice({ fields: f }, allItems, false, prevInvoice, currentInvoice, groups);
+
+      } else {
+        // ── 単一受注モード ──
+        let query;
+        if (targetOrderId) {
+          query = '/rest/v1/orders?id=eq.' + encodeURIComponent(targetOrderId);
+        } else {
+          query = '/rest/v1/orders?order=created_at.desc&limit=1';
+        }
+        query += '&select=id,order_code,order_date,input_company_name,input_contact_name,notes,is_personal_trade,handling_fee,shipping_fee,handling_fee_charge,shipping_fee_charge,handling_fee_qty,shipping_fee_qty,customers(company_name,contact_name,postal_code,address,closing_day,payment_month_offset,payment_day,is_personal_trade),order_items(quantity,unit_price,remarks,products(product_code,product_name,is_food))&order_items.order=display_order.asc';
+
+        const res = await sbFetch(query);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        orders = await res.json();
+
+        if (!orders || orders.length === 0) {
+          document.getElementById('loadingState').innerHTML = '<div style="padding:80px;text-align:center;color:#999;">受注データが見つかりませんでした</div>';
+          return;
+        }
+
+        const order = orders[0];
+        // 取引先マスタに紐付いていればそちらを優先、無ければ注文時の入力値をフォールバック表示
+        const fallbackCompany = order.customers?.company_name || order.input_company_name || '';
+        const fallbackContact = order.customers?.contact_name || order.input_contact_name || '';
+        window._currentOrderId = order.id;
+        const f = {
+          '受注ID':   order.order_code || order.id,
+          '取引先名': fallbackCompany,
+          '担当者名': fallbackContact,
+          '受注日':   order.order_date || '',
+          '住所':     formatAddressWithZip(order.customers?.postal_code, order.customers?.address),
+          '締め日':   order.customers?.closing_day != null ? order.customers?.closing_day : null,
+          '支払月オフセット': order.customers?.payment_month_offset != null ? order.customers?.payment_month_offset : null,
+          '支払日':   order.customers?.payment_day != null ? order.customers?.payment_day : null,
+          '備考':     order.notes || '',
+          isPersonalTrade: !!(order.is_personal_trade ?? order.customers?.is_personal_trade),
+          handlingFee:    Number(order.handling_fee) || 0,
+          shippingFee:    Number(order.shipping_fee) || 0,
+          handlingCharge: !!order.handling_fee_charge,
+          shippingCharge: !!order.shipping_fee_charge,
+          handlingQty:    Number(order.handling_fee_qty) || 1,
+          shippingQty:    Number(order.shipping_fee_qty) || 1,
+        };
+        const items = (order.order_items || []).map(it => ({
+          '商品コード': it.products?.product_code || '',
+          '商品名': it.products?.product_name || '',
+          '数量':   it.quantity || 0,
+          '単価':   it.unit_price || 0,
+          '小計':   (it.quantity || 0) * (it.unit_price || 0),
+          isFood:   it.products?.is_food || false,
+          '備考':   it.remarks || '',
+        }));
+        renderInvoice({ fields: f }, items);
+      }
+
+    } catch(e) {
+      document.getElementById('loadingState').innerHTML = `<div style="padding:80px;text-align:center;color:#999;">データ取得エラー: ${esc(e.message)}</div>`;
+    }
+  }
+
+  // 初期化（設定を先に取得してから請求書を描画）
+  loadSettings().then(() => loadInvoiceData());
+</script>
+</body>
+</html>
