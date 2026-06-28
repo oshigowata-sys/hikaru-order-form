@@ -393,7 +393,7 @@
   /* セル全体に枠線（左右・上下） — border-collapse: collapse により隣接セルで1本線に */
   .invoice-table thead th,
   .invoice-table tbody td,
-  .invoice-table tfoot td { border: 1px solid var(--border); }
+  .invoice-table tfoot td { border: 2px solid var(--border); }
 
   /* 空枠行：画面表示時も印刷時も常に表示（明細10行枠固定） */
   .invoice-table tbody tr.empty-row { display: table-row; }
@@ -478,7 +478,7 @@
     flex-shrink: 0;
   }
   .totals-summary-table td {
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     padding: 6px 10px;
   }
   .totals-summary-table td:first-child {
