@@ -30,7 +30,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .topbar-left{}
-.page-title{font-size:18px;font-weight:700}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-0.3px}
 .page-sub{font-size:14px;color:var(--text-muted);margin-top:2px}
 .period-select{display:flex;align-items:center;gap:8px}
 .period-select label{font-size:14px;color:var(--text-muted);font-weight:500}
@@ -38,17 +38,16 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .period-select select:focus{border-color:var(--orange)}
 .content{padding:28px 32px;flex:1}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
-.kpi-card{background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:20px;position:relative;overflow:hidden}
-.kpi-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:0 16px 0 80px;opacity:.08;background:var(--orange)}
-.kpi-card.green::before{background:var(--green)}
-.kpi-card.yellow::before{background:var(--yellow)}
-.kpi-label{font-size:14px;color:var(--text-muted);font-weight:600;margin-bottom:8px;letter-spacing:0.5px}
-.kpi-value{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;color:var(--text);line-height:1.2}
+.kpi-card{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:18px 20px}
+.kpi-label{font-size:13px;color:var(--text-muted);font-weight:600;margin-bottom:10px;letter-spacing:0.3px}
+.kpi-value{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:var(--text);line-height:1.05;letter-spacing:-0.5px}
 .kpi-value.warn{color:var(--orange)}
-.kpi-sub{font-size:14px;color:var(--text-muted);margin-top:4px}
+.kpi-sub{font-size:13px;color:var(--text-muted);margin-top:8px}
+.kpi-sub.up{color:var(--green);font-weight:600}
+.kpi-sub.down{color:#dc2626;font-weight:600}
 .section-col{display:flex;flex-direction:column;gap:20px}
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.card{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden}
+.card{background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden}
 .card-header{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--border)}
 .card-title{font-size:14px;font-weight:700}
 .card-body{padding:20px}
@@ -59,21 +58,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .plan-lock-sub{font-size:14px;color:var(--text-muted);line-height:1.5}
 .plan-lock-btn{padding:7px 16px;background:var(--orange);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:opacity 0.2s}
 .plan-lock-btn:hover{opacity:0.85}
-.upgrade-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
-.upgrade-modal-overlay.open{display:flex}
-.upgrade-modal{background:var(--surface);border-radius:16px;width:100%;max-width:440px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.2);animation:modalIn 0.25s ease}
-@keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.upgrade-modal-header{background:linear-gradient(135deg,#e8630a,#f97316);padding:24px 28px;color:white}
-.upgrade-modal-title{font-size:17px;font-weight:700;margin-bottom:4px}
-.upgrade-modal-sub{font-size:14px;opacity:0.85}
-.upgrade-modal-body{padding:24px 28px}
-.upgrade-feature{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;font-size:14px}
-.upgrade-feature-icon{color:var(--green);font-size:16px;flex-shrink:0;margin-top:1px}
-.upgrade-modal-footer{padding:16px 28px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
-.btn-upgrade{background:var(--orange);color:white;padding:10px 22px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:opacity 0.2s}
-.btn-upgrade:hover{opacity:0.85}
-.btn-later{background:var(--bg);color:var(--text-muted);border:1.5px solid var(--border);padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
-.btn-later:hover{border-color:var(--orange);color:var(--orange)}
 table{width:100%;border-collapse:collapse}
 thead tr{background:var(--bg);border-bottom:1px solid var(--border)}
 th{padding:10px 16px;text-align:left;font-size:14px;font-weight:700;color:var(--text-muted);letter-spacing:1px;white-space:nowrap}
@@ -81,10 +65,11 @@ tbody tr{border-bottom:1px solid var(--border);transition:background 0.15s}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:var(--bg)}
 td{padding:13px 16px;font-size:14px;vertical-align:middle}
-.badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:14px;font-weight:500}
-.badge-new{background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,99,10,0.3)}
-.badge-processing{background:var(--yellow-pale);color:var(--yellow);border:1px solid rgba(217,119,6,0.3)}
-.badge-shipped{background:var(--green-pale);color:var(--green);border:1px solid rgba(30,102,65,0.3)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:13px;font-weight:600}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.badge-new{background:var(--orange-pale);color:var(--orange)}
+.badge-processing{background:var(--yellow-pale);color:var(--yellow)}
+.badge-shipped{background:var(--green-pale);color:var(--green)}
 .status-sel{border-radius:20px;font-size:14px;font-weight:600;padding:3px 8px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;outline:none;-webkit-appearance:none;appearance:none;transition:box-shadow 0.2s}
 .status-sel.s-new{background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,99,10,0.2)}
 .status-sel.s-processing{background:var(--yellow-pale);color:var(--yellow);border:1px solid rgba(217,119,6,0.2)}
@@ -94,6 +79,8 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .btn:hover{opacity:0.85}
 .btn-primary{background:var(--orange);color:#fff}
 .btn-sm{padding:5px 12px;font-size:14px;border-radius:8px}
+.btn-quiet{color:var(--text-muted);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+.btn-quiet:hover{color:var(--orange)}
 
 .sidebar-footer{padding:12px 12px 16px;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto}
 .logout-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:rgba(232,213,188,0.5);font-size:14px;font-weight:500;transition:all 0.2s;text-decoration:none}
@@ -102,8 +89,40 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
 .topbar-user-name{font-size:14px;font-weight:600;color:var(--text)}
 .topbar-user-role{font-size:14px;color:var(--text-muted)}
 .topbar-avatar{width:34px;height:34px;border-radius:10px;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+/* ===== 今日やること ===== */
+.todo-bar{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:16px;margin-bottom:24px}
+.todo-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:14px}
+.todo-card.accent{border-color:rgba(232,99,10,0.4)}
+.todo-ic{width:42px;height:42px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-muted)}
+.todo-card.accent .todo-ic{background:var(--orange-pale);color:var(--orange)}
+.todo-main{flex:1;min-width:0}
+.todo-num{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;line-height:1.05}
+.todo-card.accent .todo-num{font-size:32px}
+.todo-num.warn{color:var(--orange)}
+.todo-lbl{font-size:13px;color:var(--text-muted);margin-top:4px}
+.todo-act{font-size:13px;font-weight:700;color:var(--orange);text-decoration:none;white-space:nowrap;flex-shrink:0}
+.todo-act:hover{text-decoration:underline}
+/* ===== 受注カレンダー ===== */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:18px 20px}
+.cal-wd{text-align:center;font-size:12px;font-weight:700;color:var(--text-muted);padding-bottom:2px}
+.cal-cell{min-height:52px;border:1px solid var(--border);border-radius:10px;padding:5px 7px;display:flex;flex-direction:column;justify-content:space-between;background:var(--surface)}
+.cal-cell.empty{border:none;background:transparent;min-height:0}
+.cal-cell.has{background:var(--orange-pale);border-color:rgba(232,99,10,0.25)}
+.cal-cell.today{border-color:var(--orange);box-shadow:0 0 0 2px rgba(232,99,10,0.18)}
+.cal-d{font-size:13px;font-weight:600;color:var(--text)}
+.cal-cell.sun .cal-d{color:#dc2626}.cal-cell.sat .cal-d{color:#2563eb}
+.cal-badge{align-self:flex-end;background:var(--orange);color:#fff;font-size:11px;font-weight:700;border-radius:9px;padding:1px 7px;font-family:'Space Grotesk',sans-serif}
+.cal-legend{display:flex;gap:14px;font-size:12px;color:var(--text-muted);align-items:center}
+.cal-legend .dot{display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--orange-pale);border:1px solid rgba(232,99,10,0.3);margin-right:5px;vertical-align:middle}
+@media(max-width:880px){.todo-bar{grid-template-columns:1fr}}
+/* ===== アイコン（絵文字→統一SVG・線アイコン） ===== */
+.nav-item .icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px}
+.nav-item .icon svg{width:18px;height:18px;stroke-width:1.75}
+.logout-item .icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px}
+.logout-item .icon svg{width:18px;height:18px;stroke-width:1.75}
+.todo-ic svg{width:21px;height:21px;stroke-width:1.75}
 </style>
-<link rel="stylesheet" href="mobile.css">
+<link rel="stylesheet" href="mobile.css?v=20260622">
 </head>
 <body>
 <aside class="sidebar">
@@ -113,20 +132,20 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
   </div>
   <nav class="sidebar-nav">
     <div class="nav-label">メニュー</div>
-    <a class="nav-item active" href="dashboard.html"><span class="icon">🏠</span>ダッシュボード</a>
-    <a class="nav-item" href="orders.html"><span class="icon">📋</span>納品書一覧</a>
-    <a class="nav-item" href="invoice-list.html"><span class="icon">🧾</span>請求書管理</a>
-    <a class="nav-item" href="quotation-list.html"><span class="icon">📄</span>見積書管理</a>
+    <a class="nav-item active" href="dashboard.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M9 21v-7h6v7"/></svg></span>ダッシュボード</a>
+    <a class="nav-item" href="orders.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 12h8M8 16h6"/></svg></span>納品書一覧</a>
+    <a class="nav-item" href="invoice-list.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v17l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span>請求書管理</a>
+    <a class="nav-item" href="quotation-list.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 13h6M9 17h4"/></svg></span>見積書管理</a>
     <div class="nav-label">マスタ管理</div>
-    <a class="nav-item" href="customer.html"><span class="icon">🏢</span>取引先マスタ</a>
-    <a class="nav-item" href="products.html"><span class="icon">📦</span>商品マスタ</a>
-    <a class="nav-item" href="pricing.html"><span class="icon">💹</span>卸価格管理</a>
+    <a class="nav-item" href="customer.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v16"/><path d="M15 21V10h3a2 2 0 0 1 2 2v9"/><path d="M9 7h2M9 11h2M9 15h2"/></svg></span>取引先マスタ</a>
+    <a class="nav-item" href="products.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>商品マスタ</a>
+    <a class="nav-item" href="pricing.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2.6 12.6A2 2 0 0 1 2 11.2V4a2 2 0 0 1 2-2h7.2a2 2 0 0 1 1.4.6l8 8a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg></span>卸価格管理</a>
     <div class="nav-label">その他</div>
-    <a class="nav-item" href="settings.html"><span class="icon">⚙️</span>設定</a>
-    <a class="nav-item" href="audit-log.html"><span class="icon">🕓</span>操作履歴</a>
+    <a class="nav-item" href="settings.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>設定</a>
+    <a class="nav-item" href="audit-log.html"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg></span>操作履歴</a>
   </nav>
   <div class="sidebar-footer">
-    <a class="logout-item" href="#" onclick="signOut('login.html'); return false;"><span class="icon">🚪</span>ログアウト</a>
+    <a class="logout-item" href="#" onclick="signOut('login.html'); return false;"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></span>ログアウト</a>
   </div>
 </aside>
 <main class="main">
@@ -154,6 +173,30 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
       <span id="errorBannerMsg">データ取得に失敗しました</span>
       <button onclick="loadDashboard()" style="padding:6px 14px;background:#dc2626;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:14px">再読み込み</button>
     </div>
+    <div class="todo-bar">
+      <div class="todo-card accent">
+        <div class="todo-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.4 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.1z"/></svg></div>
+        <div class="todo-main">
+          <div class="todo-num warn" id="todoPending">—</div>
+          <div class="todo-lbl">未処理の受注（要対応）</div>
+        </div>
+        <a href="orders.html" class="todo-act">対応する →</a>
+      </div>
+      <div class="todo-card">
+        <div class="todo-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></div>
+        <div class="todo-main">
+          <div class="todo-num" id="todoToday">—</div>
+          <div class="todo-lbl">今日の受注</div>
+        </div>
+      </div>
+      <div class="todo-card">
+        <div class="todo-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></div>
+        <div class="todo-main">
+          <div class="todo-num" id="todoMonth">—</div>
+          <div class="todo-lbl">今月の受注（累計）</div>
+        </div>
+      </div>
+    </div>
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">月次売上（税抜）</div><div class="kpi-value" id="kpiSales">—</div><div class="kpi-sub" id="kpiSalesSub">—</div></div>
       <div class="kpi-card green"><div class="kpi-label">平均受注額</div><div class="kpi-value" id="kpiAvg">—</div><div class="kpi-sub" id="kpiAvgSub">—</div></div>
@@ -174,38 +217,17 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
       <div class="card">
         <div class="card-header">
           <div class="card-title">直近の受注</div>
-          <a href="orders.html" class="btn btn-primary btn-sm">すべて見る →</a>
+          <a href="orders.html" class="btn-quiet">すべて見る →</a>
         </div>
         <table id="recentOrders"></table>
       </div>
     </div>
   </div>
 </main>
-<!-- UPGRADE MODAL -->
-<div class="upgrade-modal-overlay" id="upgradeModal" onclick="if(event.target===this)closeUpgradeModal()">
-  <div class="upgrade-modal">
-    <div class="upgrade-modal-header">
-      <div class="upgrade-modal-title">スタンダードプランにアップグレード</div>
-      <div class="upgrade-modal-sub">より詳しい分析でビジネスを加速させましょう</div>
-    </div>
-    <div class="upgrade-modal-body">
-      <div class="upgrade-feature"><span class="upgrade-feature-icon">📈</span><div><strong>月次売上推移グラフ</strong><br><span style="color:var(--text-muted);font-size:14px">過去6ヶ月の売上を視覚的に把握</span></div></div>
-      <div class="upgrade-feature"><span class="upgrade-feature-icon">📊</span><div><strong>商品別注文数グラフ</strong><br><span style="color:var(--text-muted);font-size:14px">売れ筋商品を一目で確認</span></div></div>
-      <div class="upgrade-feature"><span class="upgrade-feature-icon">🏢</span><div><strong>取引先数 無制限</strong><br><span style="color:var(--text-muted);font-size:14px">スターター：8社まで → 無制限</span></div></div>
-      <div style="margin-top:16px;padding:14px 16px;background:var(--orange-pale);border-radius:10px;border:1px solid rgba(232,99,10,0.2)">
-        <div style="font-size:14px;color:var(--orange);font-weight:700;margin-bottom:4px">スタンダードプラン</div>
-        <div style="font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif">¥9,800<span style="font-size:14px;font-weight:400;color:var(--text-muted)">/月（税別）</span></div>
-      </div>
-    </div>
-    <div class="upgrade-modal-footer">
-      <button class="btn-later" onclick="closeUpgradeModal()">後で</button>
-      <button class="btn-upgrade" onclick="location.href='https://oshigowata-sys.github.io/order-form/contact.html?subject=upgrade'">お問い合わせ →</button>
-    </div>
-  </div>
-</div>
-
 <script src="config.js"></script>
 <script src="auth.js?v=20260510-idletimer"></script>
+<script src="sidebar-icons.js?v=20260625"></script>
+<script src="upgrade-modal.js?v=20260625"></script>
 <script>
   // ===== ページガード =====
   checkAuth();
@@ -248,13 +270,7 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
       </div>`;
   }
 
-  function openUpgradeModal() {
-    document.getElementById('upgradeModal').classList.add('open');
-  }
-
-  function closeUpgradeModal() {
-    document.getElementById('upgradeModal').classList.remove('open');
-  }
+  // openUpgradeModal / closeUpgradeModal は共通モジュール upgrade-modal.js が提供
 
   function esc(s) {
     if (s == null) return '';
@@ -345,18 +361,68 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
 
     const prev = ordersForMonth(prevMonthKey(key));
     const prevSales = prev.reduce((s,o) => s + o.total, 0);
+    const salesSubEl = document.getElementById('kpiSalesSub');
     if (prevSales > 0) {
       const diff = ((sales - prevSales) / prevSales * 100).toFixed(1);
-      document.getElementById('kpiSalesSub').textContent = diff >= 0 ? `前月比 ↑ +${diff}%` : `前月比 ↓ ${diff}%`;
+      salesSubEl.textContent = diff >= 0 ? `前月比 ↑ +${diff}%` : `前月比 ↓ ${diff}%`;
+      salesSubEl.className = 'kpi-sub ' + (diff >= 0 ? 'up' : 'down');
     } else {
-      document.getElementById('kpiSalesSub').textContent = '—';
+      salesSubEl.textContent = '—';
+      salesSubEl.className = 'kpi-sub';
     }
     const cDiff = count - prev.length;
-    document.getElementById('kpiOrdersSub').textContent = `前月比 ${cDiff >= 0 ? '+' : ''}${cDiff}件`;
+    const ordersSubEl = document.getElementById('kpiOrdersSub');
+    ordersSubEl.textContent = `前月比 ${cDiff >= 0 ? '+' : ''}${cDiff}件`;
+    ordersSubEl.className = 'kpi-sub ' + (cDiff > 0 ? 'up' : cDiff < 0 ? 'down' : '');
 
     renderChart(key);
     renderPieChart(key);
     renderRecentOrders(cur);
+    renderTodo();
+  }
+
+  function todayStr() {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  }
+
+  // 「今日やること」: 選択月に関係なく“今”を見せる（未処理は全期間・件数は今日/今月）
+  function renderTodo() {
+    const pending = allOrders.filter(o => o.status === '新規受注').length;
+    const ts = todayStr();
+    const todayCount = allOrders.filter(o => o.date === ts).length;
+    const nowKey = ts.slice(0, 7);
+    const monthCount = allOrders.filter(o => o.date && o.date.startsWith(nowKey)).length;
+    document.getElementById('todoPending').textContent = pending + '件';
+    document.getElementById('todoToday').textContent  = todayCount + '件';
+    document.getElementById('todoMonth').textContent  = monthCount + '件';
+  }
+
+  // 受注カレンダー: 選択月の各日に受注件数を表示（今日を強調）
+  function renderCalendar(key) {
+    const [y, m] = key.split('-').map(Number);
+    document.getElementById('calTitle').textContent = `受注カレンダー（${y}年${m}月）`;
+    const startWd = new Date(y, m - 1, 1).getDay();
+    const days = new Date(y, m, 0).getDate();
+    const byDay = {};
+    ordersForMonth(key).forEach(o => {
+      const d = parseInt((o.date || '').slice(8, 10), 10);
+      if (d) byDay[d] = (byDay[d] || 0) + 1;
+    });
+    const ts = todayStr(), isTM = ts.slice(0, 7) === key, td = parseInt(ts.slice(8, 10), 10);
+    const wd = ['日','月','火','水','木','金','土'];
+    let html = wd.map((w,i) => `<div class="cal-wd"${i===0?' style="color:#dc2626"':i===6?' style="color:#2563eb"':''}>${w}</div>`).join('');
+    for (let i = 0; i < startWd; i++) html += '<div class="cal-cell empty"></div>';
+    for (let d = 1; d <= days; d++) {
+      const wdi = (startWd + d - 1) % 7;
+      const cls = ['cal-cell'];
+      if (byDay[d]) cls.push('has');
+      if (isTM && d === td) cls.push('today');
+      if (wdi === 0) cls.push('sun'); else if (wdi === 6) cls.push('sat');
+      const badge = byDay[d] ? `<span class="cal-badge">${byDay[d]}</span>` : '<span></span>';
+      html += `<div class="${cls.join(' ')}"><span class="cal-d">${d}</span>${badge}</div>`;
+    }
+    document.getElementById('calendar').innerHTML = html;
   }
 
   function renderChart(key) {
@@ -386,9 +452,9 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
       const isCurrent = p.key === key;
       const amt = p.sales > 0 ? '¥' + (p.sales / 10000).toFixed(1) + '万' : '—';
       return `
-        <text x="${p.x}" y="${p.y - 8}" text-anchor="middle" font-size="9" fill="${isCurrent ? '#e8630a' : '#7a6a55'}" font-weight="${isCurrent ? '700' : '400'}" font-family="Space Grotesk,sans-serif">${amt}</text>
+        <text x="${p.x}" y="${p.y - 8}" text-anchor="middle" font-size="11" fill="${isCurrent ? '#e8630a' : '#7a6a55'}" font-weight="${isCurrent ? '700' : '400'}" font-family="Space Grotesk,sans-serif">${amt}</text>
         <circle cx="${p.x}" cy="${p.y}" r="${isCurrent ? 5 : 3.5}" fill="${isCurrent ? '#e8630a' : '#fff'}" stroke="${isCurrent ? '#e8630a' : '#e2d9ce'}" stroke-width="2"/>
-        <text x="${p.x}" y="${padT + plotH + 16}" text-anchor="middle" font-size="10" fill="${isCurrent ? '#e8630a' : '#7a6a55'}" font-weight="${isCurrent ? '700' : '400'}" font-family="Noto Sans JP,sans-serif">${p.label}</text>
+        <text x="${p.x}" y="${padT + plotH + 18}" text-anchor="middle" font-size="11" fill="${isCurrent ? '#e8630a' : '#7a6a55'}" font-weight="${isCurrent ? '700' : '400'}" font-family="Noto Sans JP,sans-serif">${p.label}</text>
       `;
     }).join('');
     document.getElementById('chart').innerHTML = `
@@ -449,9 +515,9 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
       <div style="flex-shrink:0">
         <svg width="180" height="180" viewBox="0 0 180 180">
           ${paths}
-          <text x="${cx}" y="${cy - 5}" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Noto Sans JP,sans-serif">合計</text>
+          <text x="${cx}" y="${cy - 5}" text-anchor="middle" font-size="11" fill="var(--text-muted)" font-family="Noto Sans JP,sans-serif">合計</text>
           <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="20" font-weight="700" fill="var(--text)" font-family="Space Grotesk,sans-serif">${total}</text>
-          <text x="${cx}" y="${cy + 28}" text-anchor="middle" font-size="10" fill="var(--text-muted)" font-family="Noto Sans JP,sans-serif">個</text>
+          <text x="${cx}" y="${cy + 28}" text-anchor="middle" font-size="11" fill="var(--text-muted)" font-family="Noto Sans JP,sans-serif">個</text>
         </svg>
       </div>
       <div style="flex:1;overflow-y:auto;max-height:180px">${legend}</div>
