@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -505,6 +505,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
 
 <script src="config.js"></script>
 <script src="auth.js?v=20260510-idletimer"></script>
+<script src="notification-bell.js?v=20260707"></script>
 <script src="preview-renderer.js?v=20260704-center-headers2"></script>
 <script>
   // ===== ページガード =====
@@ -927,6 +928,19 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
       updateEditOrderPreview();
     });
     loadOrderDetail(orderId);
+    markOrderSeen(orderId);
+  }
+
+  // 通知ベル用の既読記録：詳細を開いた注文に seen_at を入れる（未読のものだけ）。
+  // 失敗しても詳細表示には影響させない（次に開いた時にまた試みる）
+  function markOrderSeen(orderId) {
+    sbFetch(`/rest/v1/orders?id=eq.${orderId}&seen_at=is.null`, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ seen_at: new Date().toISOString() })
+    }).then(() => {
+      if (typeof window.__notifBellRefresh === 'function') window.__notifBellRefresh();
+    }).catch(() => {});
   }
 
   async function updateOrderStatus() {
@@ -1578,6 +1592,16 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
     });
   });
 
+  // URL指定でタブを初期選択（通知ベル・?status=new 等で遷移。共通版と同じ）
+  (function () {
+    const p = new URLSearchParams(location.search).get('status');
+    const map = { new: '新規受注', processing: '処理中', shipped: '出荷済み' };
+    if (p && map[p]) {
+      const t = document.querySelector(`.tab[data-filter="${map[p]}"]`);
+      if (t) t.click();
+    }
+  })();
+
   // ===== 新規受注入力 =====
   let newOrderItems = [];
   let allCustomers = [];
@@ -2126,7 +2150,11 @@ const errEl      = document.getElementById('orderError');
     }
   }
 
-  loadOrders();
+  loadOrders().then(() => {
+    // 通知ベルの新着一覧から ?open=<受注ID> で来た時、その注文の詳細を直接開く（共通版と同じ）
+    const openId = new URLSearchParams(location.search).get('open');
+    if (openId && allOrders.some(o => o.id === openId)) openDetail(openId);
+  });
 </script>
 <script src="mobile.js"></script>
 </body>
