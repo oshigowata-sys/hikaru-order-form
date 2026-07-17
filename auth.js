@@ -117,7 +117,10 @@ function startAutoRefresh() {
   }, delay);
 }
 
-if (sessionStorage.getItem('_sb_jwt')) { startAutoRefresh(); startIdleWatch(); }
+// 父親版：60分放置での自動ログアウトは無効化（ソフト＝ブラウザ/タブを閉じるまでログインを維持）。
+// セッションは sessionStorage 保持のため、ブラウザ/タブを閉じれば従来どおり自動サインアウトされる。
+// ログイン維持は startAutoRefresh がトークンを自動更新し続けることで担保する。
+if (sessionStorage.getItem('_sb_jwt')) { startAutoRefresh(); }
 
 async function signOut(redirectUrl) {
   const token = sessionStorage.getItem('_sb_jwt');
