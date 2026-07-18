@@ -122,6 +122,28 @@ function startAutoRefresh() {
 // ログイン維持は startAutoRefresh がトークンを自動更新し続けることで担保する。
 if (sessionStorage.getItem('_sb_jwt')) { startAutoRefresh(); }
 
+// 父親版：PCスリープ・長時間離席から戻った時にログインを先回りで復帰させる。
+// setTimeout の自動更新はスリープ中は止まるため、戻ってきた瞬間にトークンが期限切れだと
+// 次の画面移動で checkAuth に弾かれて「勝手にログアウトされた」状態になる。
+// 画面が再表示された時に、期限切れ or 5分以内に切れるトークンを更新トークンで先に更新しておく。
+let _reviving = false;
+async function reviveSession() {
+  if (_reviving) return;
+  if (!sessionStorage.getItem('_sb_refresh')) return;
+  const expiry = _getTokenExpiry();
+  // まだ5分以上余裕があるなら何もしない（通常の自動更新に任せる）
+  if (expiry && expiry - Date.now() > 5 * 60 * 1000) return;
+  _reviving = true;
+  try {
+    const data = await sbRefreshSession();
+    if (data?.access_token) startAutoRefresh();
+  } catch (e) { /* 復帰失敗は握りつぶす（次の操作時の checkAuth に委ねる） */ }
+  finally { _reviving = false; }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) reviveSession(); });
+window.addEventListener('focus', reviveSession);
+window.addEventListener('pageshow', reviveSession);
+
 async function signOut(redirectUrl) {
   const token = sessionStorage.getItem('_sb_jwt');
   if (token) {
