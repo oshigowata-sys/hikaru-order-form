@@ -338,7 +338,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
           <div id="editAddSection" style="display:none;border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div class="form-label2" style="margin-bottom:10px">商品を追加</div>
             <div class="add-item-row">
-              <select class="form-input2" id="editItemProduct" onchange="if(this.value){const q=document.getElementById('editItemQty');q.focus();q.select();}">
+              <select class="form-input2" id="editItemProduct">
                 <option value="">商品を選択してください</option>
               </select>
               <input type="text" data-num="int" class="form-input2" id="editItemQty" placeholder="数量" min="1" value="1" oninput="onNumInput(this, event)" />
@@ -448,7 +448,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
           <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div class="form-label2" style="margin-bottom:10px">商品を追加</div>
             <div class="add-item-row">
-              <select class="form-input2" id="newItemProduct" onchange="if(this.value){const q=document.getElementById('newItemQty');q.focus();q.select();}">
+              <select class="form-input2" id="newItemProduct">
                 <option value="">商品を選択してください</option>
               </select>
               <input type="text" data-num="int" class="form-input2" id="newItemQty" placeholder="数量" min="1" value="1" oninput="onNumInput(this, event)" />
@@ -1267,12 +1267,16 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
       isFood: product.is_food || false,
       remarks: '',
     });
+    const addedIdx = editItems.length - 1;
     document.getElementById('editItemProduct').value = '';
     document.getElementById('editItemQty').value = '1';
     const search = document.getElementById('editItemSearch');
     if (search) { search.value = ''; renderEditSearchResults('', []); }
     renderEditItems();
     updateEditOrderPreview();
+    // 追加した行の数量欄へカーソルを移し「1」を選択状態にする（父親の要望・追加ボタン左の欄ではなく行の数量）。
+    const qtyInput = document.querySelector(`#modalItems .edit-item-qty[data-qty-idx="${addedIdx}"]`);
+    if (qtyInput) { qtyInput.focus(); qtyInput.select(); }
   }
 
   function renderEditItems() {
@@ -1973,6 +1977,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
     const unitPrice = getUnitPrice(productId);
     // 同じ商品でも必ず別行として追加（父親の伝統的な納品書スタイル＝分配先別に行を分ける運用）
     newOrderItems.push({ productId, name: product.product_name, qty, unitPrice, costPrice: 0, listPrice: product.list_price != null ? Number(product.list_price) : null, remarks: '', isFood: !!product.is_food });
+    const addedIdx = newOrderItems.length - 1;
     document.getElementById('newItemProduct').value = '';
     document.getElementById('newItemQty').value = '1';
     const search = document.getElementById('newItemSearch');
@@ -1982,6 +1987,9 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
     }
     renderNewItems();
     updateNewOrderPreview();
+    // 追加した行の数量欄へカーソルを移し「1」を選択状態にする＝そのまま数量を打てる（父親の要望・追加ボタン左の欄ではなく行の数量）。
+    const qtyInput = document.querySelector(`#newItemsTbody .new-item-qty[data-qty-idx="${addedIdx}"]`);
+    if (qtyInput) { qtyInput.focus(); qtyInput.select(); }
   }
 
   function getNewFees() {
