@@ -338,7 +338,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
           <div id="editAddSection" style="display:none;border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div class="form-label2" style="margin-bottom:10px">商品を追加</div>
             <div class="add-item-row">
-              <select class="form-input2" id="editItemProduct">
+              <select class="form-input2" id="editItemProduct" onchange="if(this.value){const q=document.getElementById('editItemQty');q.focus();q.select();}">
                 <option value="">商品を選択してください</option>
               </select>
               <input type="text" data-num="int" class="form-input2" id="editItemQty" placeholder="数量" min="1" value="1" oninput="onNumInput(this, event)" />
@@ -448,7 +448,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
           <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
             <div class="form-label2" style="margin-bottom:10px">商品を追加</div>
             <div class="add-item-row">
-              <select class="form-input2" id="newItemProduct">
+              <select class="form-input2" id="newItemProduct" onchange="if(this.value){const q=document.getElementById('newItemQty');q.focus();q.select();}">
                 <option value="">商品を選択してください</option>
               </select>
               <input type="text" data-num="int" class="form-input2" id="newItemQty" placeholder="数量" min="1" value="1" oninput="onNumInput(this, event)" />
