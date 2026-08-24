@@ -1368,6 +1368,7 @@
           <div class="party-name">${esc(f['取引先名'] || '取引先名')}<span class="party-name-suffix">御中</span></div>
           ${f['担当者名'] ? `<div class="party-address">${esc(f['担当者名'])} 様</div>` : ''}
           ${f['住所'] ? `<div class="party-address" style="font-size:12px;color:var(--text-muted)">${esc(f['住所'])}</div>` : ''}
+          ${f['電話番号'] ? `<div class="party-address" style="font-size:12px;color:var(--text-muted)">TEL: ${esc(f['電話番号'])}</div>` : ''}
         </div>
         <div style="text-align:right;">
           <div style="font-size:10px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">発行者 / ISSUED BY</div>
@@ -1583,6 +1584,7 @@
           <div class="party-label">請求先 / BILL TO</div>
           <div class="party-name" style="font-size:19px;">${esc(f['取引先名'] || '取引先名')}</div>
           ${f['住所'] ? `<div class="party-address">${esc(f['住所'])}</div>` : ''}
+          ${f['電話番号'] ? `<div class="party-address">TEL: ${esc(f['電話番号'])}</div>` : ''}
         </div>
         <div style="text-align:right;">
           <div class="footer-section-title" style="margin-bottom:6px;">発行者 / ISSUED BY</div>
@@ -2001,7 +2003,7 @@
 
         // 取引先詳細・前回請求書・現在の請求書（明細スナップショット込み）を並行取得
         const [custRes, prevRes, curRes] = await Promise.all([
-          sbFetch('/rest/v1/customers?id=eq.' + encodeURIComponent(targetCustomerId) + '&select=company_name,contact_name,is_personal_trade,postal_code,address,closing_day,payment_month_offset,payment_day&limit=1'),
+          sbFetch('/rest/v1/customers?id=eq.' + encodeURIComponent(targetCustomerId) + '&select=company_name,contact_name,is_personal_trade,postal_code,address,phone,closing_day,payment_month_offset,payment_day&limit=1'),
           sbFetch(
             '/rest/v1/invoices?customer_id=eq.' + encodeURIComponent(targetCustomerId) +
             '&period_end=lt.' + encodeURIComponent(targetPeriodEnd) +
@@ -2074,6 +2076,8 @@
           '担当者名': firstOrder?.customers?.contact_name || customerExtra.contact_name || '',
           '受注日':   targetPeriodEnd || '',
           '住所':     formatAddressWithZip(customerExtra.postal_code, customerExtra.address),
+          // 電話番号は取引先マスタの代表番号（複数登録した場合の1件目）。受注ゼロの期間もマスタから引く
+          '電話番号': customerExtra.phone || '',
           '締め日':   customerExtra.closing_day != null ? customerExtra.closing_day : null,
           '支払月オフセット': customerExtra.payment_month_offset != null ? customerExtra.payment_month_offset : null,
           '支払日':   customerExtra.payment_day != null ? customerExtra.payment_day : null,
@@ -2190,7 +2194,7 @@
         } else {
           query = '/rest/v1/orders?order=created_at.desc&limit=1';
         }
-        query += '&select=id,order_code,order_date,input_company_name,input_contact_name,notes,is_personal_trade,handling_fee,shipping_fee,handling_fee_charge,shipping_fee_charge,handling_fee_qty,shipping_fee_qty,customers(company_name,contact_name,postal_code,address,closing_day,payment_month_offset,payment_day,is_personal_trade),order_items(quantity,unit_price,remarks,list_price,products(product_code,product_name,is_food,list_price))&order_items.order=display_order.asc';
+        query += '&select=id,order_code,order_date,input_company_name,input_contact_name,notes,is_personal_trade,handling_fee,shipping_fee,handling_fee_charge,shipping_fee_charge,handling_fee_qty,shipping_fee_qty,customers(company_name,contact_name,postal_code,address,phone,closing_day,payment_month_offset,payment_day,is_personal_trade),order_items(quantity,unit_price,remarks,list_price,products(product_code,product_name,is_food,list_price))&order_items.order=display_order.asc';
 
         const res = await sbFetch(query);
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -2212,6 +2216,8 @@
           '担当者名': fallbackContact,
           '受注日':   order.order_date || '',
           '住所':     formatAddressWithZip(order.customers?.postal_code, order.customers?.address),
+          // 電話番号は取引先マスタの代表番号（複数登録した場合の1件目）。未登録なら行ごと出さない
+          '電話番号': order.customers?.phone || '',
           '締め日':   order.customers?.closing_day != null ? order.customers?.closing_day : null,
           '支払月オフセット': order.customers?.payment_month_offset != null ? order.customers?.payment_month_offset : null,
           '支払日':   order.customers?.payment_day != null ? order.customers?.payment_day : null,
