@@ -509,6 +509,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
 
 <script src="config.js"></script>
 <script src="auth.js?v=20260717-no-idle"></script>
+<script src="customer-sort.js?v=20261005"></script>
 <script src="notification-bell.js?v=20260707"></script>
 <script src="preview-renderer.js?v=20260803-tax-rate"></script>
 <script src="tax-rates.js?v=20260803"></script>
@@ -663,7 +664,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
       '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">読み込み中...</td></tr>';
     try {
       const res = await sbFetch(
-        `/rest/v1/orders?tenant_id=eq.${tenantId}&select=id,order_code,order_date,status,customer_id,input_company_name,input_contact_name,notes,is_personal_trade,handling_fee,shipping_fee,handling_fee_charge,shipping_fee_charge,handling_fee_qty,shipping_fee_qty,customers(company_name,contact_name,is_personal_trade),order_items(quantity,unit_price,cost_price,products(is_food))&order=order_date.desc`
+        `/rest/v1/orders?tenant_id=eq.${tenantId}&select=id,order_code,order_date,status,customer_id,input_company_name,input_contact_name,notes,is_personal_trade,handling_fee,shipping_fee,handling_fee_charge,shipping_fee_charge,handling_fee_qty,shipping_fee_qty,customers(company_name,name_kana,contact_name,is_personal_trade),order_items(quantity,unit_price,cost_price,products(is_food))&order=order_date.desc`
       );
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
@@ -702,6 +703,7 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
           customer_id: r.customer_id || null,
           order_date: r.order_date || '',
           customer: displayCompany,
+          customerKana: r.customers?.name_kana || '',
           customerSearch: masterCompany + ' ' + inputCompany,
           contactName: r.customers?.contact_name || r.input_contact_name || '',
           isUnlinked,
@@ -754,12 +756,18 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
     renderOrders();
   }
 
-  // 取引先プルダウンの選択肢を作る（一覧に出ている取引先のみ・五十音順）
+  // 取引先プルダウンの選択肢を作る（一覧に出ている取引先のみ・あいうえお順）
   function buildCustomerFilterOptions() {
     const sel = document.getElementById('customerFilter');
     if (!sel) return;
-    const names = [...new Set(allOrders.map(o => o.customer).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b, 'ja'));
+    // 並べ替えに使う「よみ」は受注に紐づく取引先マスタから拾う（未入力なら法人格を外した会社名で並ぶ）
+    const kanaOf = {};
+    allOrders.forEach(o => { if (o.customer && !kanaOf[o.customer]) kanaOf[o.customer] = o.customerKana || ''; });
+    const names = MeguReeCustomerSort.sort(
+      [...new Set(allOrders.map(o => o.customer).filter(Boolean))],
+      n => n,
+      n => kanaOf[n] || ''
+    );
     const prev = sel.value;
     sel.innerHTML = '<option value="all">すべて</option>' +
       names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
@@ -1790,8 +1798,10 @@ td{padding:13px 14px;font-size:14px;vertical-align:middle;white-space:nowrap}
 
   async function loadCustomersForEntry() {
     if (allCustomers.length) return;
-    const res = await sbFetch(`/rest/v1/customers?tenant_id=eq.${tenantId}&select=id,company_name,is_personal_trade&order=company_name`);
+    const res = await sbFetch(`/rest/v1/customers?tenant_id=eq.${tenantId}&select=id,company_name,name_kana,is_personal_trade&order=company_name`);
     allCustomers = await res.json();
+    // あいうえお順（よみ欄があればそれ、無ければ法人格を外した会社名）
+    allCustomers = MeguReeCustomerSort.sort(allCustomers, c => c.company_name, c => c.name_kana);
     const sel = document.getElementById('newOrderCustomer');
     sel.innerHTML = '<option value="">選択してください</option>' +
       allCustomers.map(c => `<option value="${esc(c.id)}">${esc(c.company_name)}${c.is_personal_trade ? '（個人取引）' : ''}</option>`).join('');

@@ -181,7 +181,7 @@ td{padding:14px 16px;font-size:14px;vertical-align:middle}
             <select class="form-input" id="fCustomer" onchange="onCustomerSelectChange()">
               <option value="">選択してください</option>
             </select>
-            <input type="text" class="search-input-inline ime-active" lang="ja" id="fCustomerSearch" placeholder="🔍 取引先名で絞り込み" oninput="filterCustomerOptions(this.value)" style="margin-top:6px">
+            <input type="text" class="search-input-inline ime-active" lang="ja" id="fCustomerSearch" placeholder="🔍 取引先名・よみで絞り込み" oninput="filterCustomerOptions(this.value)" style="margin-top:6px">
             <div id="fCustomerResults" class="search-results-wrap" style="display:none"></div>
           </div>
           <div class="form-group">
@@ -215,6 +215,7 @@ td{padding:14px 16px;font-size:14px;vertical-align:middle}
 </main>
 <script src="config.js"></script>
 <script src="auth.js?v=20260717-no-idle"></script>
+<script src="customer-sort.js?v=20261005"></script>
 <script src="notification-bell.js?v=20260707"></script>
 <script>
   // ===== ページガード =====
@@ -264,13 +265,13 @@ async function loadAll() {
   setTableLoading(true);
   try {
     const [custRes, prodRes, pricingRes] = await Promise.all([
-      sbFetch(`/rest/v1/customers?tenant_id=eq.${tenantId}&select=id,company_name&order=company_name`),
+      sbFetch(`/rest/v1/customers?tenant_id=eq.${tenantId}&select=id,company_name,name_kana&order=company_name`),
       sbFetch(`/rest/v1/products?tenant_id=eq.${tenantId}&select=id,product_name,price,list_price&order=product_name`),
-      sbFetch(`/rest/v1/pricing?tenant_id=eq.${tenantId}&select=id,rate,wholesale_price,customer_id,product_id,customers(company_name),products(product_name,price,list_price)&order=created_at`)
+      sbFetch(`/rest/v1/pricing?tenant_id=eq.${tenantId}&select=id,rate,wholesale_price,customer_id,product_id,customers(company_name,name_kana),products(product_name,price,list_price)&order=created_at`)
     ]);
     if (!custRes.ok || !prodRes.ok || !pricingRes.ok) throw new Error('データ取得失敗');
 
-    CUSTOMERS = (await custRes.json()).map(r => ({ id: r.id, name: r.company_name }));
+    CUSTOMERS = (await custRes.json()).map(r => ({ id: r.id, name: r.company_name, kana: r.name_kana || '' }));
     PRODUCTS  = (await prodRes.json()).map(r => ({
       id: r.id, name: r.product_name,
       basePrice: r.price || 0,
@@ -291,16 +292,18 @@ async function loadAll() {
         rate:           rate,
         wholesalePrice: wholesalePrice,
         custName:       r.customers?.company_name || '',
+        custKana:       r.customers?.name_kana    || '',
         prodName:       r.products?.product_name  || '',
         basePrice:      basePrice,
         listPrice:      listPrice,
       };
     });
 
-    CUSTOMERS.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+    // 取引先はあいうえお順（よみ欄があればそれ、無ければ法人格を外した会社名）
+    CUSTOMERS = MeguReeCustomerSort.sort(CUSTOMERS, c => c.name, c => c.kana);
     PRODUCTS.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
     PRICING.sort((a, b) => {
-      const c = a.custName.localeCompare(b.custName, 'ja');
+      const c = MeguReeCustomerSort.compare(a.custName, a.custKana, b.custName, b.custKana);
       return c !== 0 ? c : a.prodName.localeCompare(b.prodName, 'ja');
     });
 
@@ -406,7 +409,11 @@ function filterCustomerOptions(query) {
     wrap.innerHTML = '';
     return;
   }
-  const filtered = CUSTOMERS.filter(c => normalizeSearch(c.name).includes(q));
+  // 会社名でも「よみ」でも当たるようにする
+  const filtered = CUSTOMERS.filter(c =>
+    normalizeSearch(c.name).includes(q) ||
+    (c.kana && normalizeSearch(c.kana).includes(q))
+  );
   wrap.style.display = 'block';
   if (filtered.length === 0) {
     wrap.innerHTML = '<div class="search-result-empty">該当する取引先がありません</div>';
@@ -547,8 +554,14 @@ function renderPricing() {
   }
 
   const groups = {};
-  list.forEach(p => { if (!groups[p.custName]) groups[p.custName] = []; groups[p.custName].push(p); });
-  const custKeys = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ja'));
+  const custKana = {};
+  list.forEach(p => {
+    if (!groups[p.custName]) groups[p.custName] = [];
+    groups[p.custName].push(p);
+    if (!custKana[p.custName]) custKana[p.custName] = p.custKana || '';
+  });
+  // 取引先の見出しもあいうえお順
+  const custKeys = MeguReeCustomerSort.sort(Object.keys(groups), n => n, n => custKana[n] || '');
 
   let html = '';
   custKeys.forEach((cust, idx) => {
