@@ -154,8 +154,8 @@
     </div>
     <div class="card">
       <div class="card-header">
-        <div class="card-title">取引先一覧</div>
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 会社名・担当者で検索" oninput="onSearchInput(this.value)">
+        <div class="card-title">取引先一覧<span id="kanaTodo" style="display:none;font-size:12px;font-weight:600;color:var(--orange);background:var(--orange-pale);padding:2px 8px;border-radius:999px;margin-left:10px;vertical-align:middle"></span></div>
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 会社名・よみ・担当者で検索" oninput="onSearchInput(this.value)">
       </div>
       <table>
         <thead><tr>
@@ -188,6 +188,11 @@
           <label class="form-label">担当者名</label>
           <input class="form-input" id="fContact" type="text" placeholder="例：田中 太郎">
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">よみ（カナ）</label>
+        <input class="form-input" id="fNameKana" type="text" placeholder="例：メグリー（「株式会社」は入れない）">
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">プルダウンや一覧をあいうえお順に並べるために使います。ひらがな・カタカナどちらでも構いません。空欄でも登録できます。</div>
       </div>
       <div class="form-group">
         <label class="form-label">メールアドレス</label>
@@ -347,6 +352,7 @@
 
 <script src="config.js"></script>
 <script src="auth.js?v=20260717-no-idle"></script>
+<script src="customer-sort.js?v=20261005"></script>
 <script src="notification-bell.js?v=20260707"></script>
 <script>
   // ===== ページガード =====
@@ -416,6 +422,7 @@
       customers = data.map(r => ({
         id:      r.id,
         company: r.company_name  || '',
+        nameKana: r.name_kana    || '',
         contact: r.contact_name  || '',
         phone:   r.phone         || '',
         email:   r.email         || '',
@@ -432,7 +439,8 @@
         defHandlingQty:    r.default_handling_fee_qty != null ? Number(r.default_handling_fee_qty) : 1,
         defShippingQty:    r.default_shipping_fee_qty != null ? Number(r.default_shipping_fee_qty) : 1,
       }));
-      customers.sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+      // あいうえお順（よみ欄があればそれ、無ければ法人格を外した会社名）
+      customers = MeguReeCustomerSort.sort(customers, c => c.company, c => c.nameKana);
       render();
     } catch(e) {
       console.error('顧客データ取得失敗:', e);
@@ -449,21 +457,40 @@
     document.getElementById('kpiRemaining').textContent = remaining;
   }
 
+  // よみが未入力の取引先の件数を出す（一度入れてしまえば消える案内）
+  function updateKanaTodo() {
+    const el = document.getElementById('kanaTodo');
+    if (!el) return;
+    const n = customers.filter(c => !(c.nameKana || '').trim()).length;
+    if (n === 0) { el.style.display = 'none'; return; }
+    el.textContent = `よみ未入力 ${n}件`;
+    el.title = 'よみ（カナ）を入れると、プルダウンや一覧が正しいあいうえお順に並びます';
+    el.style.display = 'inline-block';
+  }
+
   function render() {
     updateKPIs();
+    updateKanaTodo();
     const tbody = document.getElementById('customerTbody');
     if (customers.length === 0) {
       tbody.innerHTML = '<tr class="empty-row"><td colspan="6">取引先が登録されていません</td></tr>';
       return;
     }
     const q = currentSearch.toLowerCase();
-    const list = q ? customers.filter(c => c.company.toLowerCase().includes(q) || c.contact.toLowerCase().includes(q)) : customers;
+    // よみでも探せるようにする（ひらがな・カタカナ・半角カナのどれで打っても当たる）
+    const qk = MeguReeCustomerSort.norm(currentSearch);
+    const list = q ? customers.filter(c =>
+      c.company.toLowerCase().includes(q) ||
+      c.contact.toLowerCase().includes(q) ||
+      (qk && MeguReeCustomerSort.norm(c.nameKana).includes(qk))
+    ) : customers;
     if (list.length === 0) {
       tbody.innerHTML = '<tr class="empty-row"><td colspan="6">該当する取引先が見つかりません</td></tr>';
       return;
     }
     tbody.innerHTML = list.map(c => `<tr>
-      <td style="font-weight:600">${esc(c.company)}${c.isPersonalTrade ? ' <span style="display:inline-block;font-size:11px;font-weight:600;color:var(--orange);background:var(--orange-pale);padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle">個人取引</span>' : ''}</td>
+      <td style="font-weight:600">${esc(c.company)}${c.isPersonalTrade ? ' <span style="display:inline-block;font-size:11px;font-weight:600;color:var(--orange);background:var(--orange-pale);padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle">個人取引</span>' : ''}
+        <div style="font-size:11px;font-weight:400;color:var(--text-muted);margin-top:2px">${c.nameKana ? esc(c.nameKana) : 'よみ未入力'}</div></td>
       <td style="color:var(--text-muted)">${esc(c.contact)}</td>
       <td style="font-family:'Space Grotesk',sans-serif;color:var(--text-muted);font-size:14px">${esc(c.phone)}</td>
       <td style="color:var(--text-muted);font-size:14px">${esc(c.email)}</td>
@@ -503,7 +530,7 @@
   function openAddModal() {
     editId = null;
     document.getElementById('modalTitle').textContent = '新規取引先を追加';
-    ['fCompany','fContact','fEmail','fAddress','fClosing','fPaymentOffset','fPayment'].forEach(id => {
+    ['fCompany','fNameKana','fContact','fEmail','fAddress','fClosing','fPaymentOffset','fPayment'].forEach(id => {
       document.getElementById(id).value = '';
     });
     document.getElementById('fZip').value = '';
@@ -528,6 +555,7 @@
     editId = id;
     document.getElementById('modalTitle').textContent = '取引先を編集';
     document.getElementById('fCompany').value  = c.company;
+    document.getElementById('fNameKana').value = c.nameKana || '';
     document.getElementById('fContact').value  = c.contact;
     document.getElementById('fEmail').value    = c.email;
     document.getElementById('fZip').value            = c.postalCode || '';
@@ -711,6 +739,7 @@
     const mainPhone = (_phones.find(p => (p.value || '').trim())?.value || '').trim();
     const payload = {
       company_name: company,
+      name_kana:    document.getElementById('fNameKana').value.trim() || null,
       contact_name: document.getElementById('fContact').value.trim() || null,
       phone:        mainPhone || null,
       email:        document.getElementById('fEmail').value.trim()   || null,

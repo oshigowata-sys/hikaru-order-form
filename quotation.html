@@ -322,6 +322,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 <script src="config.js"></script>
 <script src="auth.js?v=20260717-no-idle"></script>
+<script src="customer-sort.js?v=20261005"></script>
 <script src="tax-rates.js?v=20260803"></script>
 <script>
 checkAuth();
@@ -540,8 +541,10 @@ async function init() {
 
 function populateCustomerSelect() {
   const sel = document.getElementById('customerSelect');
+  // あいうえお順（よみ欄があればそれ、無ければ法人格を外した会社名）
+  const sorted = MeguReeCustomerSort.sort(_customers, c => c.company_name, c => c.name_kana);
   sel.innerHTML = '<option value="">取引先を選択してください</option>' +
-    _customers.map(c => `<option value="${c.id}">${esc(c.company_name || '(無名)')}</option>`).join('');
+    sorted.map(c => `<option value="${c.id}">${esc(c.company_name || '(無名)')}</option>`).join('');
 }
 
 async function loadExistingQuotation() {
