@@ -24,11 +24,11 @@
     '.upgrade-price{margin-top:16px;padding:14px 16px;background:var(--orange-pale,#fff4ec);border-radius:10px;border:1px solid rgba(232,99,10,0.2)}',
     '.upgrade-price-label{font-size:14px;color:var(--orange,#e8630a);font-weight:700;margin-bottom:4px}',
     '.upgrade-price-amount{font-size:22px;font-weight:700;font-family:"Space Grotesk",sans-serif}',
-    '.upgrade-price-amount span{font-size:14px;font-weight:400;color:var(--text-muted,#7a6a55)}',
+    '.upgrade-price-amount span{font-size:14px;font-weight:400;color:var(--text-muted,#1a1208)}',
     '.upgrade-modal-footer{padding:16px 28px;border-top:1px solid var(--border,#e2d9ce);display:flex;gap:10px;justify-content:flex-end}',
     '.btn-upgrade{background:var(--orange,#e8630a);color:#fff;padding:10px 22px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:"Noto Sans JP",sans-serif;transition:opacity 0.2s}',
     '.btn-upgrade:hover{opacity:0.85}',
-    '.btn-later{background:var(--bg,#f7f3ee);color:var(--text-muted,#7a6a55);border:1.5px solid var(--border,#e2d9ce);padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:"Noto Sans JP",sans-serif}',
+    '.btn-later{background:var(--bg,#f7f3ee);color:var(--text-muted,#1a1208);border:1.5px solid var(--border,#e2d9ce);padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:"Noto Sans JP",sans-serif}',
     '.btn-later:hover{border-color:var(--orange,#e8630a);color:var(--orange,#e8630a)}'
   ].join('');
 
@@ -47,7 +47,7 @@
     var features = FEATURES.map(function (f) {
       return '<div class="upgrade-feature"><span class="upgrade-feature-icon">' + f[0] + '</span>' +
         '<div><strong>' + f[1] + '</strong><br>' +
-        '<span style="color:var(--text-muted,#7a6a55);font-size:14px">' + f[2] + '</span></div></div>';
+        '<span style="color:var(--text-muted,#1a1208);font-size:14px">' + f[2] + '</span></div></div>';
     }).join('');
     return '' +
       '<div class="upgrade-modal-overlay" id="upgradeModal" onclick="if(event.target===this)closeUpgradeModal()">' +

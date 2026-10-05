@@ -16,7 +16,8 @@
     --border: #e2d9ce;
     --border-strong: #b8a98f;
     --text: #1a1208;
-    --text-muted: #7a6a55;
+  /* --text-muted は本文と同じ黒。グレー文字をすべて黒にしたため（2026-10-05） */
+    --text-muted: #1a1208;
     --sidebar-bg: #1a1208;
   }
 
@@ -533,7 +534,7 @@
     bottom: 3px;
     font-size: 8px;
     letter-spacing: 1px;
-    color: #b3aa9e;
+    color: #1a1208;
     font-family: 'Noto Sans JP', sans-serif;
     pointer-events: none;
   }
@@ -1341,7 +1342,7 @@
             <td class="remarks-cell" style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px">${esc(remarks)}</td>
           </tr>`;
         }).join('') + buildFeeRowsInvoice(handlingFee, shippingFee, isPersonal, handlingCharge, shippingCharge, handlingQty, shippingQty)
-      : `<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">明細データがありません</td></tr>`;
+      : `<tr><td colspan="7" style="text-align:center;color:#1a1208;padding:20px;">明細データがありません</td></tr>`;
     const feeRowCount = (handlingFee > 0 ? 1 : 0) + (shippingFee > 0 ? 1 : 0);
     const emptyCount = Math.max(0, 10 - Math.max(items.length + feeRowCount, 1));
     const emptyRow = `<tr class="empty-row"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;
@@ -1386,7 +1387,7 @@
          ${s.address ? `<div style="font-size:12px;color:var(--text-muted);white-space:pre-line">${esc(s.address)}</div>` : ''}
          ${dContactLine}
          ${s.invoice_num ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">適格請求書番号: ${esc(s.invoice_num)}</div>` : ''}`
-      : `<div style="color:#aaa;font-size:13px;">⚙ 発行者情報を設定してください</div>`;
+      : `<div style="color:#1a1208;font-size:13px;">⚙ 発行者情報を設定してください</div>`;
 
     document.getElementById('deliveryBody').innerHTML = `
       <div class="invoice-header">
@@ -1565,12 +1566,12 @@
       dataRows = renderedRowCount > 0
         ? blocks
         // 受注ゼロの期間（前回請求額・御入金の確認用に発行するケース）
-        : `<tr><td colspan="${colCount}" style="text-align:center;color:#999;padding:20px;">この期間のご注文はありませんでした</td></tr>`;
+        : `<tr><td colspan="${colCount}" style="text-align:center;color:#1a1208;padding:20px;">この期間のご注文はありませんでした</td></tr>`;
     } else {
       // 先頭列＝上代（納品書と同じ）
       dataRows = items.length > 0
         ? items.map(it => buildItemRow(it, listPriceTd(it))).join('') + buildFeeRowsInvoice(handlingFee, shippingFee, isPersonal, handlingCharge, shippingCharge, handlingQty, shippingQty)
-        : `<tr><td colspan="${colCount}" style="text-align:center;color:#999;padding:20px;">明細データがありません</td></tr>`;
+        : `<tr><td colspan="${colCount}" style="text-align:center;color:#1a1208;padding:20px;">明細データがありません</td></tr>`;
       const feeRowCount = (handlingFee > 0 ? 1 : 0) + (shippingFee > 0 ? 1 : 0);
       renderedRowCount = items.length + feeRowCount;
     }
@@ -1604,7 +1605,7 @@
          ${iContactLine}
          ${s.email ? `<div>${esc(s.email)}</div>` : ''}
          ${s.invoice_num ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">適格請求書番号: ${esc(s.invoice_num)}</div>` : ''}`
-      : `<div style="color:#aaa;font-size:13px;">⚙ 発行者情報を設定してください</div>`;
+      : `<div style="color:#1a1208;font-size:13px;">⚙ 発行者情報を設定してください</div>`;
 
     document.getElementById('invoiceBody').innerHTML = `
       <div class="invoice-header">
@@ -2214,7 +2215,7 @@
 
         // 受注も無い・発行済みでもない・前回請求も無い＝本当に出すものが無いときだけ止める
         if (orders.length === 0 && !targetInvoiceNum && !prevInvoice) {
-          document.getElementById('loadingState').innerHTML = '<div style="padding:80px;text-align:center;color:#999;">対象期間に受注データがありませんでした</div>';
+          document.getElementById('loadingState').innerHTML = '<div style="padding:80px;text-align:center;color:#1a1208;">対象期間に受注データがありませんでした</div>';
           return;
         }
 
@@ -2405,7 +2406,7 @@
         orders = await res.json();
 
         if (!orders || orders.length === 0) {
-          document.getElementById('loadingState').innerHTML = '<div style="padding:80px;text-align:center;color:#999;">受注データが見つかりませんでした</div>';
+          document.getElementById('loadingState').innerHTML = '<div style="padding:80px;text-align:center;color:#1a1208;">受注データが見つかりませんでした</div>';
           return;
         }
 
@@ -2451,7 +2452,7 @@
       }
 
     } catch(e) {
-      document.getElementById('loadingState').innerHTML = `<div style="padding:80px;text-align:center;color:#999;">データ取得エラー: ${esc(e.message)}</div>`;
+      document.getElementById('loadingState').innerHTML = `<div style="padding:80px;text-align:center;color:#1a1208;">データ取得エラー: ${esc(e.message)}</div>`;
     }
   }
 

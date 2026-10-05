@@ -11,7 +11,8 @@
       --bg:#f7f3ee;--surface:#fff;--border:#e2d9ce;
       --orange:#e8630a;--orange-light:#f97316;--orange-pale:#fff4ec;
       --green:#1e6641;--green-pale:#e8f5ee;
-      --text:#1a1208;--text-muted:#7a6a55;
+  /* --text-muted は本文と同じ黒。グレー文字をすべて黒にしたため（2026-10-05） */
+      --text:#1a1208;--text-muted:#1a1208;
       --sidebar-bg:#1a1208;--sidebar-text:#e8d5bc;
     }
     body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
@@ -46,7 +47,8 @@
     .form-label span{color:#dc2626;margin-left:2px}
     .form-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:var(--bg);outline:none;transition:border-color 0.2s}
     .form-input:focus{border-color:var(--orange);background:white}
-    .form-input::placeholder{color:#bbb}
+    /* 入力例（プレースホルダ）は薄いまま。黒にすると入力済みに見えてしまう */
+    .form-input::placeholder{color:#b3aa9e}
     textarea.form-input{resize:vertical;min-height:72px}
     .settings-card-footer{padding:14px 24px;border-top:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:flex-end;gap:12px}
     .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;padding:10px 24px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:background 0.2s;font-family:'Noto Sans JP',sans-serif}

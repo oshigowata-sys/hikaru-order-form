@@ -19,7 +19,8 @@
     --green-light: #2d9a5f;
     --green-pale: #e8f5ee;
     --text: #1a1208;
-    --text-muted: #7a6a55;
+  /* --text-muted は本文と同じ黒。グレー文字をすべて黒にしたため（2026-10-05） */
+    --text-muted: #1a1208;
     --sidebar-bg: #1a1208;
     --sidebar-text: #e8d5bc;
     --sidebar-active: #e8630a;
@@ -196,7 +197,8 @@
     color: var(--text); background: var(--bg); outline: none; transition: border-color 0.2s;
   }
   .form-input:focus { border-color: var(--orange); background: white; }
-  .form-input::placeholder { color: #bbb; }
+  /* 入力例（プレースホルダ）は薄いまま。黒にすると入力済みに見えてしまう */
+  .form-input::placeholder { color: #b3aa9e; }
   /* 日本語入力をデフォルトにしたい欄（商品名・カテゴリ・検索）
      ※ ime-mode は Firefox など限られたブラウザでしか効かないが、
         併設の lang="ja" と合わせて IME 自動切替のヒントとして付与。

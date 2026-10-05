@@ -12,7 +12,8 @@
   --orange:#e8630a;--orange-light:#f97316;--orange-pale:#fff4ec;
   --green:#1e6641;--green-pale:#e8f5ee;
   --yellow:#d97706;--yellow-pale:#fffbeb;
-  --text:#1a1208;--text-muted:#7a6a55;
+  /* --text-muted は本文と同じ黒。グレー文字をすべて黒にしたため（2026-10-05） */
+  --text:#1a1208;--text-muted:#1a1208;
   --sidebar-bg:#1a1208;--sidebar-text:#e8d5bc;
 }
 body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
@@ -460,9 +461,9 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle}
       const isCurrent = p.key === key;
       const amt = p.sales > 0 ? '¥' + (p.sales / 10000).toFixed(1) + '万' : '—';
       return `
-        <text x="${p.x}" y="${p.y - 8}" text-anchor="middle" font-size="11" fill="${isCurrent ? '#e8630a' : '#7a6a55'}" font-weight="${isCurrent ? '700' : '400'}" font-family="Space Grotesk,sans-serif">${amt}</text>
+        <text x="${p.x}" y="${p.y - 8}" text-anchor="middle" font-size="11" fill="${isCurrent ? '#e8630a' : '#1a1208'}" font-weight="${isCurrent ? '700' : '400'}" font-family="Space Grotesk,sans-serif">${amt}</text>
         <circle cx="${p.x}" cy="${p.y}" r="${isCurrent ? 5 : 3.5}" fill="${isCurrent ? '#e8630a' : '#fff'}" stroke="${isCurrent ? '#e8630a' : '#e2d9ce'}" stroke-width="2"/>
-        <text x="${p.x}" y="${padT + plotH + 18}" text-anchor="middle" font-size="11" fill="${isCurrent ? '#e8630a' : '#7a6a55'}" font-weight="${isCurrent ? '700' : '400'}" font-family="Noto Sans JP,sans-serif">${p.label}</text>
+        <text x="${p.x}" y="${padT + plotH + 18}" text-anchor="middle" font-size="11" fill="${isCurrent ? '#e8630a' : '#1a1208'}" font-weight="${isCurrent ? '700' : '400'}" font-family="Noto Sans JP,sans-serif">${p.label}</text>
       `;
     }).join('');
     document.getElementById('chart').innerHTML = `

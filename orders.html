@@ -12,7 +12,8 @@
   --orange:#e8630a;--orange-light:#f97316;--orange-pale:#fff4ec;
   --green:#1e6641;--green-pale:#e8f5ee;
   --yellow:#d97706;--yellow-pale:#fffbeb;
-  --text:#1a1208;--text-muted:#7a6a55;
+  /* --text-muted は本文と同じ黒。グレー文字をすべて黒にしたため（2026-10-05） */
+  --text:#1a1208;--text-muted:#1a1208;
   --sidebar-bg:#1a1208;--sidebar-text:#e8d5bc;
 }
 body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
@@ -36,7 +37,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .filter-tabs{display:flex;gap:8px;padding:14px 20px;border-bottom:1px solid var(--border);align-items:center}
 .search-box{display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:7px 14px}
 .search-box input{border:none;background:none;outline:none;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);width:200px}
-.search-box input::placeholder{color:var(--text-muted)}
+/* 入力例（プレースホルダ）は薄いまま。黒にすると入力済みに見えてしまう */
+.search-box input::placeholder{color:#b3aa9e}
 .search-box:focus-within{border-color:var(--orange)}
 .tab{padding:6px 14px;border-radius:100px;font-size:14px;font-weight:500;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif;color:var(--text-muted)}
 .tab.active{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:600}
