@@ -10,7 +10,8 @@
 :root{
   --orange:#e8630a;--green:#1e6641;
   --bg:#f7f3ee;--surface:#fff;--border:#e2d9ce;--border-strong:#b8a98f;
-  --text:#1a1208;--text-muted:#7a6a55;
+  /* --text-muted は本文と同じ黒。グレー文字をすべて黒にしたため（2026-10-05） */
+  --text:#1a1208;--text-muted:#1a1208;
   --sidebar-bg:#1a1208;
 }
 /* 帳票（見積書）の罫線は黒。.quotation スコープで --border / --border-strong を黒に上書き（印刷・FAXでくっきり）。 */
@@ -965,7 +966,7 @@ function renderPreview() {
     ${contactLine}
     ${s.email ? `<div>${esc(s.email)}</div>` : ''}
     ${s.invoice_num ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">適格請求書番号: ${esc(s.invoice_num)}</div>` : ''}
-  ` : '<div style="color:#aaa;font-size:13px">⚙ 発行者情報を設定してください</div>';
+  ` : '<div style="color:#1a1208;font-size:13px">⚙ 発行者情報を設定してください</div>';
 
   const buildFeeRow = (label, fee, charge, qty) => {
     const q = Number(qty) || 1;
@@ -1010,7 +1011,7 @@ function renderPreview() {
             <td style="font-size:10px;color:var(--text-muted);font-family:'Space Grotesk',sans-serif;width:110px">${it.jan_code ? esc(formatJan(it.jan_code)) : '—'}</td>
           </tr>`;
       }).join('') + feeRows
-    : '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px">明細データがありません</td></tr>';
+    : '<tr><td colspan="7" style="text-align:center;color:#1a1208;padding:20px">明細データがありません</td></tr>';
   const feeRowCount = (_handlingFee > 0 ? 1 : 0) + (_shippingFee > 0 ? 1 : 0);
   const emptyCount = Math.max(0, 10 - Math.max(_items.length + feeRowCount, 1));
   const emptyRow = `<tr class="empty-row"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`;

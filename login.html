@@ -19,7 +19,8 @@
     --green-light: #3da066;
     --green-pale: #e8f5ee;
     --text: #1a1208;
-    --text-muted: #7a6a55;
+  /* --text-muted は本文と同じ黒。グレー文字をすべて黒にしたため（2026-10-05） */
+    --text-muted: #1a1208;
     --danger: #dc2626;
   }
 
@@ -132,7 +133,8 @@
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; outline: none;
   }
   input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,99,10,0.1); background: #fff; }
-  input::placeholder { color: var(--text-muted); opacity: 0.55; }
+  /* 入力例（プレースホルダ）は薄いまま。黒にすると入力済みに見えてしまう */
+  input::placeholder { color: #b3aa9e; }
 
   .btn {
     width: 100%; padding: 15px;

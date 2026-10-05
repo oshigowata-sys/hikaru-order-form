@@ -11,7 +11,8 @@
   --bg:#f7f3ee;--surface:#fff;--border:#e2d9ce;
   --orange:#e8630a;--orange-light:#f97316;--orange-pale:#fff4ec;
   --green:#1e6641;--green-pale:#e8f5ee;
-  --text:#1a1208;--text-muted:#7a6a55;
+  /* --text-muted は本文と同じ黒。グレー文字をすべて黒にしたため（2026-10-05） */
+  --text:#1a1208;--text-muted:#1a1208;
   --sidebar-bg:#1a1208;--sidebar-text:#e8d5bc;
 }
 body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
@@ -62,7 +63,7 @@ td{padding:13px 16px;font-size:14px;vertical-align:middle;white-space:nowrap}
 .badge-issued::before{background:var(--green)}
 .badge-pending{background:var(--orange-pale);color:var(--orange);border:1px solid rgba(232,99,10,0.2)}
 .badge-pending::before{background:var(--orange)}
-.badge-inprogress{background:#f3f4f6;color:#6b7280;border:1px solid rgba(107,114,128,0.2)}
+.badge-inprogress{background:#f3f4f6;color:#1a1208;border:1px solid rgba(107,114,128,0.2)}
 .badge-inprogress::before{background:#9ca3af}
 /* filter bar */
 .filter-bar{display:flex;align-items:center;gap:8px;padding:14px 20px;border-bottom:1px solid var(--border)}
@@ -671,7 +672,7 @@ function renderAll() {
       issuedDateCell = '未発行';
     } else if (r.status === 'issued') {
       if (r.cancelled) {
-        badge        = `<span class="badge" style="background:#f3f4f6;color:#6b7280;border:1px solid rgba(107,114,128,0.3);font-weight:700">取消済</span>`;
+        badge        = `<span class="badge" style="background:#f3f4f6;color:#1a1208;border:1px solid rgba(107,114,128,0.3);font-weight:700">取消済</span>`;
         action       = `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="openPdf(${idx})">PDF表示</button><button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;font-weight:600" onclick="confirmDeleteInvoice(${idx})">削除</button></div>`;
       } else {
         const unpaidBadge = r.paidAmount == null

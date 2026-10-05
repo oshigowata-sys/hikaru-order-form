@@ -52,11 +52,11 @@
         font-size:22px;font-weight:700;font-family:'Noto Serif JP',serif;letter-spacing:4px;
       }
       .mini-preview-subtitle{
-        font-size:9px;letter-spacing:2px;color:#7a6a55;text-transform:uppercase;margin-top:2px;
+        font-size:9px;letter-spacing:2px;color:#1a1208;text-transform:uppercase;margin-top:2px;
       }
       .mini-preview-meta table{font-size:10px;border-collapse:collapse}
       .mini-preview-meta td{padding:2px 6px;vertical-align:top}
-      .mini-preview-meta td:first-child{color:#7a6a55;font-weight:600}
+      .mini-preview-meta td:first-child{color:#1a1208;font-weight:600}
       .mini-preview-meta td:last-child{font-weight:600;font-family:'Space Grotesk',sans-serif}
       .mini-preview-parties{
         display:flex;justify-content:space-between;gap:16px;
@@ -65,7 +65,7 @@
       .mini-preview-to{flex:1;min-width:0}
       .mini-preview-from{text-align:right;max-width:55%}
       .mini-preview-label{
-        font-size:8px;letter-spacing:2px;color:#7a6a55;
+        font-size:8px;letter-spacing:2px;color:#1a1208;
         text-transform:uppercase;margin-bottom:4px;
       }
       .mini-preview-name{
@@ -73,25 +73,25 @@
         word-break:break-word;
       }
       .mini-preview-name-suffix{
-        font-size:0.75em;color:#7a6a55;font-weight:500;margin-left:4px;
+        font-size:0.75em;color:#1a1208;font-weight:500;margin-left:4px;
       }
-      .mini-preview-line{font-size:11px;color:#7a6a55;line-height:1.5;word-break:break-word}
+      .mini-preview-line{font-size:11px;color:#1a1208;line-height:1.5;word-break:break-word}
       .mini-preview-line.bold{color:#1a1208;font-weight:600}
       .mini-preview-table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px}
       .mini-preview-table th{
-        background:#f7f3ee;color:#7a6a55;padding:4px 6px;font-weight:700;
+        background:#f7f3ee;color:#1a1208;padding:4px 6px;font-weight:700;
         text-align:left;border-bottom:1px solid #e2d9ce;white-space:nowrap;
       }
       .mini-preview-table td{padding:3px 6px;border-bottom:1px solid #f0e8dd;vertical-align:middle}
       .mini-preview-table td.num{text-align:right;font-family:'Space Grotesk',sans-serif}
-      .mini-preview-table td.code{font-family:'Space Grotesk',sans-serif;color:#7a6a55;font-size:9px}
-      .mini-preview-table td.muted{color:#7a6a55;font-size:9px}
+      .mini-preview-table td.code{font-family:'Space Grotesk',sans-serif;color:#1a1208;font-size:9px}
+      .mini-preview-table td.muted{color:#1a1208;font-size:9px}
       .mini-preview-table tr.total-row td{font-weight:700;background:#f7f3ee}
       .mini-preview-table tr.grand-row td{
         font-weight:700;font-size:13px;background:#fff4ec;color:#e8630a;
       }
       .mini-preview-empty{
-        padding:30px 20px;text-align:center;color:#aaa;font-size:12px;
+        padding:30px 20px;text-align:center;color:#1a1208;font-size:12px;
       }
       .mini-preview-amount-headline{
         background:#1a1208;color:#fff;padding:10px 14px;border-radius:8px;
@@ -101,14 +101,14 @@
       .mini-preview-amount-headline-value{
         font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;
       }
-      .mini-preview-note{color:#aaa;font-style:italic}
-      .mini-preview-undecided{color:#aaa}
+      .mini-preview-note{color:#1a1208;font-style:italic}
+      .mini-preview-undecided{color:#1a1208}
       .mini-preview-bank{
         background:#f7f3ee;border:1px solid #e2d9ce;border-radius:6px;
         padding:6px 10px;font-size:10px;margin-bottom:8px;
       }
       .mini-preview-bank-label{
-        font-size:8px;letter-spacing:2px;color:#7a6a55;
+        font-size:8px;letter-spacing:2px;color:#1a1208;
         text-transform:uppercase;margin-bottom:4px;
       }
       .mini-preview-notes{
@@ -117,10 +117,10 @@
       }
       .mini-preview-totals-row{display:flex;gap:6px;align-items:stretch;margin-top:4px}
       .mini-preview-totals-notes{flex:1;border:1px solid #e2d9ce;border-radius:4px;padding:5px 7px;background:#fff;font-size:9px;line-height:1.4;color:#1a1208;min-height:42px;white-space:pre-wrap}
-      .mini-preview-totals-notes-label{font-size:7px;letter-spacing:1px;color:#7a6a55;text-transform:uppercase;margin-bottom:2px}
+      .mini-preview-totals-notes-label{font-size:7px;letter-spacing:1px;color:#1a1208;text-transform:uppercase;margin-bottom:2px}
       .mini-preview-totals-table{width:160px;border-collapse:collapse;font-size:9px;flex-shrink:0}
       .mini-preview-totals-table td{border:1px solid #e2d9ce;padding:3px 6px}
-      .mini-preview-totals-table td:first-child{background:#faf8f5;color:#7a6a55;width:72px}
+      .mini-preview-totals-table td:first-child{background:#faf8f5;color:#1a1208;width:72px}
       .mini-preview-totals-table td:last-child{text-align:right;font-family:'Space Grotesk',sans-serif}
       .mini-preview-totals-table tr.grand-row td{font-weight:700;background:#fff;color:#1a1208}
     `;
@@ -294,7 +294,7 @@
         <td class="code">—</td>
         <td>${label}</td>
         <td class="num">${qDisp}</td>
-        <td class="num">${fmtYen(unit)}<span style="margin-left:3px;color:#7a6a55">${taxMark(false, isPersonal)}</span></td>
+        <td class="num">${fmtYen(unit)}<span style="margin-left:3px;color:#1a1208">${taxMark(false, isPersonal)}</span></td>
         <td class="num">${fmtYen(line)}</td>
         <td class="muted" style="text-align:center">税込</td>
         <td class="muted"></td>
@@ -311,7 +311,7 @@
     const price = Number(it.unit_price || 0);
     const sub = qty * price;
     const isReq = price === 0;
-    const priceCell = isReq ? '<span style="color:#dc2626">要相談</span>' : `${fmtYen(price)}<span style="margin-left:3px;color:#7a6a55">${taxMark(!!it.is_food, isPersonal)}</span>`;
+    const priceCell = isReq ? '<span style="color:#dc2626">要相談</span>' : `${fmtYen(price)}<span style="margin-left:3px;color:#1a1208">${taxMark(!!it.is_food, isPersonal)}</span>`;
     const subCell = isReq ? '<span style="color:#dc2626">要相談</span>' : fmtYen(sub);
     return `<tr>
       ${firstCellHtml || `<td class="code">${esc(it.product_code || '—')}</td>`}
@@ -511,7 +511,7 @@
       const dispPrice = toDispPrice(price, !!it.is_food, isPersonal);
       const subDisp = qty * dispPrice;
       const isReq = price === 0;
-      const priceCell = isReq ? '<span style="color:#dc2626">要相談</span>' : `${fmtYen(dispPrice)}<span style="margin-left:3px;color:#7a6a55">${taxMark(!!it.is_food, isPersonal)}</span>`;
+      const priceCell = isReq ? '<span style="color:#dc2626">要相談</span>' : `${fmtYen(dispPrice)}<span style="margin-left:3px;color:#1a1208">${taxMark(!!it.is_food, isPersonal)}</span>`;
       const subCell = isReq ? '<span style="color:#dc2626">要相談</span>' : fmtYen(subDisp);
       return `<tr>
         <td class="num" style="width:60px">${it.list_price != null ? fmtYen(it.list_price) : '—'}</td>
@@ -534,7 +534,7 @@
         <td>${label}</td>
         <td class="num" style="width:45px">—</td>
         <td class="num" style="width:40px">${qDisp}</td>
-        <td class="num" style="width:65px">${fmtYen(unit)}<span style="margin-left:3px;color:#7a6a55">${taxMark(false, isPersonal)}</span></td>
+        <td class="num" style="width:65px">${fmtYen(unit)}<span style="margin-left:3px;color:#1a1208">${taxMark(false, isPersonal)}</span></td>
         <td class="num" style="width:75px">${fmtYen(line)}</td>
         <td class="code" style="width:90px">—</td>
       </tr>`;
