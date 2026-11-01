@@ -186,7 +186,7 @@ tr.row-inprogress td{color:var(--text-muted)}
           <option value="all">📅 全期間</option>
         </select>
         <div style="margin-left:auto">
-          <input type="text" id="searchInput" class="search-input" placeholder="🔍 取引先名で検索" oninput="onSearchInput(this.value)">
+          <input type="text" id="searchInput" class="search-input" placeholder="🔍 取引先名・請求書番号で検索" oninput="onSearchInput(this.value)" style="width:260px">
         </div>
       </div>
       <div class="table-wrapper">
@@ -240,6 +240,11 @@ tr.row-inprogress td{color:var(--text-muted)}
         <label class="form-label">御入金金額（前回分の入金・任意）</label>
         <input type="text" class="form-input" id="issuePaidAmount" placeholder="（任意）" style="width:100%" oninput="onIssuePaidInput(this)">
         <div id="issuePaidHint" style="margin-top:6px;font-size:12.5px;color:var(--text-muted)">前回の御請求分として入金された金額。ここで入れなくても、発行したあとの請求書の画面から入れられます。</div>
+      </div>
+      <div style="margin-top:14px">
+        <label class="form-label">前回御請求額（空欄なら自動計算・任意）</label>
+        <input type="text" class="form-input" id="issuePrevAmount" placeholder="（空欄＝自動計算）" style="width:100%" oninput="onIssuePrevInput(this)">
+        <div id="issuePrevHint" style="margin-top:6px;font-size:12.5px;color:var(--text-muted)">前の請求書から自動で引き継がれます。金額が合わないときだけ、ここに正しい金額を入れてください（0 や マイナスも入れられます）。<br>※入金があったのに金額が合わない場合は、<strong>入金があった月の請求書の「御入金金額」</strong>を入れると自動で合います。こちらで直すのは最後の手段にしてください。</div>
       </div>
       <div style="margin-top:14px">
         <label class="form-label">帳票全体の備考（請求書フッターに表示・任意）</label>
@@ -470,7 +475,7 @@ async function loadAll() {
     const today = new Date();
     const [ordersRes, invoicesRes, settingsRes] = await Promise.all([
       sbFetch(`/rest/v1/orders?tenant_id=eq.${tenantId}&select=id,order_date,is_personal_trade,customers(id,company_name,closing_day,is_personal_trade),order_items(quantity,unit_price,products(is_food))&order=order_date.asc`),
-      sbFetch(`/rest/v1/invoices?tenant_id=eq.${tenantId}&superseded_at=is.null&select=id,invoice_number,customer_id,period_start,period_end,issued_date,total_excl_tax,tax_amount,total_incl_tax,paid_amount,is_interim,cancelled_at,customers(company_name,closing_day)&order=issued_date.desc`),
+      sbFetch(`/rest/v1/invoices?tenant_id=eq.${tenantId}&superseded_at=is.null&select=id,invoice_number,customer_id,period_start,period_end,issued_date,total_excl_tax,tax_amount,total_incl_tax,paid_amount,prev_amount_override,is_interim,cancelled_at,customers(company_name,closing_day)&order=issued_date.desc`),
       sbFetch(`/rest/v1/settings?tenant_id=eq.${tenantId}&select=tax_rate_changes&limit=1`)
     ]);
     if (!ordersRes.ok || !invoicesRes.ok) throw new Error('データ取得失敗');
@@ -515,6 +520,7 @@ async function loadAll() {
       invoiceNumber: inv.invoice_number || '',
       issuedDate: (inv.issued_date || '').slice(0,10),
       paidAmount: inv.paid_amount != null ? inv.paid_amount : null,
+      prevOverride: inv.prev_amount_override != null ? inv.prev_amount_override : null,
       cancelled: !!inv.cancelled_at,
     }));
 
@@ -642,7 +648,12 @@ function renderAll() {
     rows = rows.filter(r => r.periodEnd && r.periodEnd.slice(0, 7) === currentMonth);
   }
   const q = currentSearch.toLowerCase();
-  if (q) rows = rows.filter(r => r.customer.toLowerCase().includes(q));
+  // 取引先名と請求書番号の両方で探せるようにする。
+  // （一覧に番号が出ていなかった頃は「この番号の請求書が見当たらない」が起きていた）
+  if (q) rows = rows.filter(r =>
+    r.customer.toLowerCase().includes(q) ||
+    (r.invoiceNumber || '').toLowerCase().includes(q)
+  );
 
   updateSortIndicators();
   if (currentSort.key) {
@@ -699,7 +710,11 @@ function renderAll() {
     const rowClass = r.status === 'in_progress' ? ' class="row-inprogress"' : '';
     return `<tr${rowClass}>
       <td style="font-weight:600">${esc(r.customer)}</td>
-      <td style="font-size:14px;color:var(--text-muted)">${period}</td>
+      <td style="font-size:14px;color:var(--text-muted)">${period}${
+        // 請求書番号は期間の下に小さく添える。独立した列にすると表が約80px広がり、
+        // 幅の狭い画面で右端の操作ボタンが横スクロールの外へ押し出されてしまう。
+        r.invoiceNumber ? `<div style="font-size:13px;font-family:'Space Grotesk',sans-serif;letter-spacing:0.3px">${esc(r.invoiceNumber)}</div>` : ''
+      }</td>
       <td class="num-right" style="font-family:'Space Grotesk',sans-serif">${ordersCell}</td>
       <td class="num-right" style="font-weight:700;font-family:'Space Grotesk',sans-serif">¥${total.toLocaleString()}</td>
       <td style="font-size:14px;color:var(--text-muted)">${issuedDateCell}</td>
@@ -792,6 +807,8 @@ async function saveIssuedDate() {
 // ── 発行モーダル ──
 let _issueTarget = null;
 let _isInterim   = false;
+// 「前回御請求額」欄の説明文の元の文章（初回に開いたとき1度だけ控える）
+let _basePrevHintHtml = null;
 
 async function openIssueModal(r, isInterim = false) {
   _issueTarget = r;
@@ -823,33 +840,56 @@ async function openIssueModal(r, isInterim = false) {
   // 御入金金額の初期値：同じ取引先・同じ期間で前に作った請求書に入金が入っていれば、それを引き継ぐ。
   // ※入金は請求書に紐づいて保存されるため、発行を取り消して作り直すと一緒に消えていた
   //   （備考は引き継いでいたのに入金だけ消える状態だった）。取消済・上書き済も含めて探す。
+  // 前回御請求額の手入力（prev_amount_override）も同じ理由で消えるため、一緒に引き継ぐ。
   const paidEl  = document.getElementById('issuePaidAmount');
   const hintEl  = document.getElementById('issuePaidHint');
+  const prevEl  = document.getElementById('issuePrevAmount');
+  const prevHintEl = document.getElementById('issuePrevHint');
   const baseHint = '前回の御請求分として入金された金額。ここで入れなくても、発行したあとの請求書の画面から入れられます。';
+  // 説明文の元の文章は初回に1度だけ控える（2回目以降に開いたとき、前回の
+  // オレンジの引き継ぎメッセージを「元の文章」と誤って覚えてしまうのを防ぐ）
+  if (_basePrevHintHtml === null && prevHintEl) _basePrevHintHtml = prevHintEl.innerHTML;
   if (paidEl) {
     paidEl.value = '';
     if (hintEl) { hintEl.textContent = baseHint; hintEl.style.color = 'var(--text-muted)'; hintEl.style.fontWeight = ''; }
-    try {
-      const paidRes = await sbFetch(
-        `/rest/v1/invoices?tenant_id=eq.${encodeURIComponent(tenantId)}` +
-        `&customer_id=eq.${encodeURIComponent(r.customerId)}` +
-        `&period_start=eq.${encodeURIComponent(r.periodStart)}` +
-        `&period_end=eq.${encodeURIComponent(r.periodEnd)}` +
-        `&paid_amount=not.is.null&select=paid_amount,invoice_number&order=created_at.desc&limit=1`
-      );
-      if (paidRes.ok) {
-        const arr = await paidRes.json();
-        if (arr[0] && arr[0].paid_amount != null) {
-          paidEl.value = Number(arr[0].paid_amount).toLocaleString('en-US');
-          if (hintEl) {
-            hintEl.textContent = `前に作った請求書（${arr[0].invoice_number}）に入っていた御入金金額を引き継ぎました。違っていればここで直せます。`;
-            hintEl.style.color = 'var(--orange)';
-            hintEl.style.fontWeight = '600';
-          }
+  }
+  if (prevEl) {
+    prevEl.value = '';
+    if (prevHintEl) { prevHintEl.style.color = 'var(--text-muted)'; prevHintEl.style.fontWeight = ''; }
+  }
+  try {
+    const paidRes = await sbFetch(
+      `/rest/v1/invoices?tenant_id=eq.${encodeURIComponent(tenantId)}` +
+      `&customer_id=eq.${encodeURIComponent(r.customerId)}` +
+      `&period_start=eq.${encodeURIComponent(r.periodStart)}` +
+      `&period_end=eq.${encodeURIComponent(r.periodEnd)}` +
+      `&select=paid_amount,prev_amount_override,invoice_number&order=created_at.desc&limit=50`
+    );
+    if (paidRes.ok) {
+      const arr = await paidRes.json();
+      const paidSrc = arr.find(x => x.paid_amount != null);
+      if (paidEl && paidSrc) {
+        paidEl.value = Number(paidSrc.paid_amount).toLocaleString('en-US');
+        if (hintEl) {
+          hintEl.textContent = `前に作った請求書（${paidSrc.invoice_number}）に入っていた御入金金額を引き継ぎました。違っていればここで直せます。`;
+          hintEl.style.color = 'var(--orange)';
+          hintEl.style.fontWeight = '600';
         }
       }
-    } catch (e) { /* 引き継ぎ失敗は致命的でないので無視 */ }
-  }
+      const prevSrc = arr.find(x => x.prev_amount_override != null);
+      if (prevEl && prevSrc) {
+        prevEl.value = String(prevSrc.prev_amount_override);
+        onIssuePrevInput(prevEl);
+        if (prevHintEl) {
+          prevHintEl.innerHTML = `前に作った請求書（${prevSrc.invoice_number}）で手入力されていた前回御請求額を引き継ぎました。自動計算に戻したいときは、この欄を空にしてください。`;
+          prevHintEl.style.color = 'var(--orange)';
+          prevHintEl.style.fontWeight = '600';
+        }
+      } else if (prevHintEl && _basePrevHintHtml !== null) {
+        prevHintEl.innerHTML = _basePrevHintHtml;
+      }
+    }
+  } catch (e) { /* 引き継ぎ失敗は致命的でないので無視 */ }
   updateIssuePreview();
   document.getElementById('issueModalOverlay').classList.add('open');
 }
@@ -868,9 +908,33 @@ function onIssuePaidInput(el) {
   const d = issuePaidDigits(el.value);
   el.value = d === '' ? '' : Number(d).toLocaleString('en-US');
 }
+// 前回御請求額はマイナスになりうる（前回に多く振り込まれた分＝預り金が繰り越されたとき）。
+// 御入金金額そのものは常にプラスなので、マイナスを許すのは前回御請求額の欄だけ。
+// 戻り値は '' / '-' / 数字文字列（'-' だけの途中入力は空扱いにせず残して打ち続けられるようにする）
+function issuePrevSigned(s) {
+  const z = zenkakuNum(s);
+  const neg = /^\s*-/.test(z);
+  const d = z.replace(/[^0-9]/g, '');
+  if (d === '') return neg ? '-' : '';
+  return (neg ? '-' : '') + d;
+}
+function onIssuePrevInput(el) {
+  const v = issuePrevSigned(el.value);
+  if (v === '' || v === '-') { el.value = v; return; }
+  const neg = v.startsWith('-');
+  el.value = (neg ? '-' : '') + Number(v.replace('-', '')).toLocaleString('en-US');
+}
+// 入力された前回御請求額を数値にする。空欄（＝自動計算のまま）は null を返す。
+function issuePrevValue() {
+  const v = issuePrevSigned(document.getElementById('issuePrevAmount')?.value || '');
+  if (v === '' || v === '-') return null;
+  return Number(v);
+}
 // 日本語入力の確定時にも半角化を通す（変換中は oninput が飛ばないブラウザがあるため）
 document.addEventListener('compositionend', (e) => {
-  if (e.target && e.target.id === 'issuePaidAmount') onIssuePaidInput(e.target);
+  if (!e.target) return;
+  if (e.target.id === 'issuePaidAmount') onIssuePaidInput(e.target);
+  if (e.target.id === 'issuePrevAmount') onIssuePrevInput(e.target);
 });
 
 function closeIssueModal() {
@@ -991,6 +1055,9 @@ async function confirmIssue() {
     // 空欄なら未登録（null）＝一覧に「入金未登録」の赤いしるしが出る。
     const paidDigits = issuePaidDigits(document.getElementById('issuePaidAmount')?.value || '');
     const paidValue  = paidDigits === '' ? null : Number(paidDigits);
+    // 前回御請求額：空欄なら null＝自動計算のまま。入っていれば手入力として保存する
+    // （0 も意味のある値なので「空欄」と「0」は区別する）。
+    const prevOverrideValue = issuePrevValue();
     const invoicePayloadBody = {
       invoice_number: num,
       customer_id:    r.customerId,
@@ -1006,6 +1073,7 @@ async function confirmIssue() {
       paid_amount:    paidValue,
     };
     if (manualPrevAmount !== null) invoicePayloadBody.manual_prev_amount = manualPrevAmount;
+    if (prevOverrideValue !== null) invoicePayloadBody.prev_amount_override = prevOverrideValue;
 
     // 採番が万一それでも既存番号と衝突（unique制約違反=409）した場合は、次の番号で数回だけ再試行する。
     let res, issueAttempt = 0;
@@ -1027,6 +1095,27 @@ async function confirmIssue() {
     const invoicePayload = await res.json();
     const invoiceId = Array.isArray(invoicePayload) ? invoicePayload[0]?.id : invoicePayload?.id;
     if (!invoiceId) throw new Error('発行された請求書IDの取得に失敗しました');
+
+    // 発行画面で前回御請求額を手入力した場合、操作履歴に記録
+    // （請求書の画面からクリックで直した時と同じく、後から誰が何円にしたか追えるようにする）
+    if (prevOverrideValue !== null) {
+      try {
+        await sbFetch('/rest/v1/audit_log', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            user_name: userName || '—',
+            action: 'create',
+            table_name: 'invoices',
+            record_id: String(invoiceId),
+            record_label: `${r.customer} ${num} 前回御請求額を手入力（発行画面）`,
+            old_values: null,
+            new_values: { invoice_number: num, prev_amount_override: prevOverrideValue }
+          })
+        });
+      } catch(e) { console.warn('audit_log書き込み失敗:', e); }
+    }
 
     // 初回前回請求額が入力された場合、操作履歴に記録
     if (manualPrevAmount !== null) {
@@ -1165,7 +1254,10 @@ async function confirmCancelInvoice(idx) {
   const paidNote = r.paidAmount != null
     ? `\n\n⚠️ この請求書には御入金金額 ¥${Number(r.paidAmount).toLocaleString()} が記録されています。\n同じ期間で発行し直すときは、この金額が発行画面に引き継がれます（違っていればその場で直せます）。`
     : '';
-  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）の発行を取り消します。\n同じ期間で再発行できるようになります。${paidNote}\n\nよろしいですか？`);
+  const prevNote = r.prevOverride != null
+    ? `\n\n⚠️ この請求書は前回御請求額を手入力（¥${Number(r.prevOverride).toLocaleString()}）してあります。\n同じ期間で発行し直すときは、この金額も発行画面に引き継がれます。`
+    : '';
+  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）の発行を取り消します。\n同じ期間で再発行できるようになります。${paidNote}${prevNote}\n\nよろしいですか？`);
   if (!ok) return;
 
   try {
@@ -1209,7 +1301,10 @@ async function confirmDeleteInvoice(idx) {
   const paidNote = r.paidAmount != null
     ? `\n\n⚠️ この請求書には御入金金額 ¥${Number(r.paidAmount).toLocaleString()} が記録されています。\n削除するとこの入金の記録も消え、発行し直しても引き継げません。\n（残しておきたい場合は「削除」ではなく「発行取り消し」を使ってください）`
     : '';
-  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）を削除します。\n元に戻せません。${paidNote}\n\nよろしいですか？`);
+  const prevNote = r.prevOverride != null
+    ? `\n\n⚠️ この請求書は前回御請求額を手入力（¥${Number(r.prevOverride).toLocaleString()}）してあります。\n削除するとこの手入力も消え、発行し直しても引き継げません。`
+    : '';
+  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）を削除します。\n元に戻せません。${paidNote}${prevNote}\n\nよろしいですか？`);
   if (!ok) return;
 
   try {
