@@ -898,7 +898,18 @@
 <script src="tax-rates.js?v=20260803"></script>
 <script>
   checkAuth();
-  function yenDigits(s) { return String(s ?? '').replace(/[^0-9]/g, ''); }
+  // 全角数字・全角記号を半角へ直す。
+  // 日本語入力のまま「１７２８０」と打たれても金額として読めるようにするため、
+  // 金額欄の読み取り（yenDigits / yenDigitsSigned）の入口で必ず通す。
+  // ※これが無いと全角で入れた金額は「数字が1つも無い」と判定され、
+  //   御入金金額・前回御請求額が【エラーも出さずに保存されない】。
+  function zenkakuNum(str) {
+    return String(str == null ? '' : str)
+      .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+      .replace(/．/g, '.')
+      .replace(/[−ー－]/g, '-');
+  }
+  function yenDigits(s) { return zenkakuNum(s).replace(/[^0-9]/g, ''); }
   function formatYen(s) {
     const d = yenDigits(s);
     return d === '' ? '' : Number(d).toLocaleString('en-US');
@@ -910,7 +921,7 @@
   // 前回御請求額はマイナスになりうる（前回に多く振り込まれた分＝預り金が繰り越されたとき）。
   // 御入金金額そのものは常にプラスなので、マイナスを許すのは前回御請求額の欄だけ。
   function yenDigitsSigned(s) {
-    const t = String(s ?? '').replace(/[^0-9-]/g, '');
+    const t = zenkakuNum(s).replace(/[^0-9-]/g, '');
     return (t.startsWith('-') ? '-' : '') + t.replace(/-/g, '');
   }
   function formatYenSigned(s) {
@@ -921,6 +932,14 @@
     el.value = formatYenSigned(el.value);
     el.size = Math.max((el.value || '').length, 1);
   }
+  // 保険：日本語入力の変換を確定した瞬間にも半角化を通す。
+  // ブラウザによっては変換中に oninput が飛ばず、確定まで全角のまま残るため。
+  document.addEventListener('compositionend', (e) => {
+    const el = e.target;
+    if (!el || !el.matches) return;
+    if (el.id === 'sumPaidInput') onYenInput(el);
+    else if (el.id === 'sumPrevInput') onYenInputSigned(el);
+  });
 
   function esc(str) {
     if (str === null || str === undefined) return '';
@@ -1877,7 +1896,7 @@
       sumPrevEl.style.cursor = t.canEditPrev ? 'pointer' : '';
       sumPrevEl.title = t.canEditPrev
         ? 'クリックで編集（自動計算と違う金額に直せます）'
-        : '発行するとここから金額を直せます';
+        : 'まだ発行していないため直せません。発行したあと、ここをクリックして直せます';
       // 手で直した値は自動計算と違うと分かるよう画面上だけ色を変える（印刷では通常色）
       sumPrevEl.classList.toggle('prev-overridden', isOverridden && !editingPrevInput);
     }
@@ -2010,6 +2029,19 @@
   function startEditPaid() {
     const cell = document.getElementById('sumPaid');
     if (!cell || cell.querySelector('input')) return;
+    // まだ発行していない請求書は保存先が無い。
+    // 以前はここで編集できてしまい、入力し終えてから「請求書が特定できません」と出ていた。
+    // 入れる場所（発行画面の御入金金額欄）を先に伝える。
+    if (!window._currentInvoiceNum) {
+      const msg = document.getElementById('paidSaveMsg');
+      if (msg) {
+        msg.textContent = 'まだ発行していないため入れられません。発行のときに「御入金金額」欄で入力できます';
+        msg.style.color = '#dc2626';
+        msg.style.opacity = '1';
+        setTimeout(() => { msg.style.opacity = '0'; }, 4000);
+      }
+      return;
+    }
     const current = _paidAmountValue != null ? Number(_paidAmountValue).toLocaleString('en-US') : '';
     cell.style.cursor = 'text';
     cell.innerHTML = `<span style="display:inline-flex;align-items:baseline;gap:0;">¥<input type="text" id="sumPaidInput" inputmode="numeric" value="${current}" oninput="onYenInput(this);onPaidInputChange();" onblur="endEditPaid()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" style="background:transparent;border:none;border-bottom:1.5px dashed var(--orange);font:inherit;color:inherit;outline:none;padding:0;margin:0;text-align:left;box-sizing:content-box;min-width:0;"></span>`;

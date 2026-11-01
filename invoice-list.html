@@ -237,6 +237,11 @@ tr.row-inprogress td{color:var(--text-muted)}
         <div style="margin-top:6px;font-size:12.5px;color:var(--text-muted)">通常はこのまま（今日）。月末日付で発行したい場合などに変更できます。発行後も変更できます。</div>
       </div>
       <div style="margin-top:14px">
+        <label class="form-label">御入金金額（前回分の入金・任意）</label>
+        <input type="text" class="form-input" id="issuePaidAmount" placeholder="（任意）" style="width:100%" oninput="onIssuePaidInput(this)">
+        <div id="issuePaidHint" style="margin-top:6px;font-size:12.5px;color:var(--text-muted)">前回の御請求分として入金された金額。ここで入れなくても、発行したあとの請求書の画面から入れられます。</div>
+      </div>
+      <div style="margin-top:14px">
         <label class="form-label">帳票全体の備考（請求書フッターに表示・任意）</label>
         <textarea class="form-input" id="issueNotes" maxlength="200" placeholder="（任意）" style="min-height:60px;resize:vertical;width:100%"></textarea>
       </div>
@@ -815,9 +820,58 @@ async function openIssueModal(r, isInterim = false) {
       }
     } catch (e) { /* 引き継ぎ失敗は致命的でないので無視 */ }
   }
+  // 御入金金額の初期値：同じ取引先・同じ期間で前に作った請求書に入金が入っていれば、それを引き継ぐ。
+  // ※入金は請求書に紐づいて保存されるため、発行を取り消して作り直すと一緒に消えていた
+  //   （備考は引き継いでいたのに入金だけ消える状態だった）。取消済・上書き済も含めて探す。
+  const paidEl  = document.getElementById('issuePaidAmount');
+  const hintEl  = document.getElementById('issuePaidHint');
+  const baseHint = '前回の御請求分として入金された金額。ここで入れなくても、発行したあとの請求書の画面から入れられます。';
+  if (paidEl) {
+    paidEl.value = '';
+    if (hintEl) { hintEl.textContent = baseHint; hintEl.style.color = 'var(--text-muted)'; hintEl.style.fontWeight = ''; }
+    try {
+      const paidRes = await sbFetch(
+        `/rest/v1/invoices?tenant_id=eq.${encodeURIComponent(tenantId)}` +
+        `&customer_id=eq.${encodeURIComponent(r.customerId)}` +
+        `&period_start=eq.${encodeURIComponent(r.periodStart)}` +
+        `&period_end=eq.${encodeURIComponent(r.periodEnd)}` +
+        `&paid_amount=not.is.null&select=paid_amount,invoice_number&order=created_at.desc&limit=1`
+      );
+      if (paidRes.ok) {
+        const arr = await paidRes.json();
+        if (arr[0] && arr[0].paid_amount != null) {
+          paidEl.value = Number(arr[0].paid_amount).toLocaleString('en-US');
+          if (hintEl) {
+            hintEl.textContent = `前に作った請求書（${arr[0].invoice_number}）に入っていた御入金金額を引き継ぎました。違っていればここで直せます。`;
+            hintEl.style.color = 'var(--orange)';
+            hintEl.style.fontWeight = '600';
+          }
+        }
+      }
+    } catch (e) { /* 引き継ぎ失敗は致命的でないので無視 */ }
+  }
   updateIssuePreview();
   document.getElementById('issueModalOverlay').classList.add('open');
 }
+
+// 御入金金額の入力欄：全角で打たれても金額として読めるように半角化し、3桁区切りで表示する。
+// （数値欄に type=number / inputmode を付けない理由＝日本語入力が勝手に半角英数へ切り替わり
+//   他の欄に戻してもひらがなに戻らなくなるため。目印は付けず、入った全角をこちらで直す）
+function zenkakuNum(str) {
+  return String(str == null ? '' : str)
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/．/g, '.')
+    .replace(/[−ー－]/g, '-');
+}
+function issuePaidDigits(s) { return zenkakuNum(s).replace(/[^0-9]/g, ''); }
+function onIssuePaidInput(el) {
+  const d = issuePaidDigits(el.value);
+  el.value = d === '' ? '' : Number(d).toLocaleString('en-US');
+}
+// 日本語入力の確定時にも半角化を通す（変換中は oninput が飛ばないブラウザがあるため）
+document.addEventListener('compositionend', (e) => {
+  if (e.target && e.target.id === 'issuePaidAmount') onIssuePaidInput(e.target);
+});
 
 function closeIssueModal() {
   document.getElementById('issueModalOverlay').classList.remove('open');
@@ -933,6 +987,10 @@ async function confirmIssue() {
     const incl   = r.excl + r.tax;
 
     const notesValue = (document.getElementById('issueNotes')?.value || '').trim();
+    // 御入金金額：モーダルで入力（または前の請求書から引き継いだ）値をそのまま保存する。
+    // 空欄なら未登録（null）＝一覧に「入金未登録」の赤いしるしが出る。
+    const paidDigits = issuePaidDigits(document.getElementById('issuePaidAmount')?.value || '');
+    const paidValue  = paidDigits === '' ? null : Number(paidDigits);
     const invoicePayloadBody = {
       invoice_number: num,
       customer_id:    r.customerId,
@@ -945,6 +1003,7 @@ async function confirmIssue() {
       tenant_id:      tenantId,
       is_interim:     _isInterim,
       notes:          notesValue || null,
+      paid_amount:    paidValue,
     };
     if (manualPrevAmount !== null) invoicePayloadBody.manual_prev_amount = manualPrevAmount;
 
@@ -1101,7 +1160,12 @@ async function confirmIssue() {
 async function confirmCancelInvoice(idx) {
   const r = _renderedRows[idx];
   if (!r || !r.invoiceId) return;
-  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）の発行を取り消します。\n同じ期間で再発行できるようになります。\nよろしいですか？`);
+  // 入金が入っている請求書は、取り消すとその記録も一緒に消える。
+  // 同じ期間で発行し直せば発行画面に引き継がれるが、気づかないまま進めないよう先に知らせる。
+  const paidNote = r.paidAmount != null
+    ? `\n\n⚠️ この請求書には御入金金額 ¥${Number(r.paidAmount).toLocaleString()} が記録されています。\n同じ期間で発行し直すときは、この金額が発行画面に引き継がれます（違っていればその場で直せます）。`
+    : '';
+  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）の発行を取り消します。\n同じ期間で再発行できるようになります。${paidNote}\n\nよろしいですか？`);
   if (!ok) return;
 
   try {
@@ -1141,7 +1205,11 @@ async function confirmCancelInvoice(idx) {
 async function confirmDeleteInvoice(idx) {
   const r = _renderedRows[idx];
   if (!r || !r.invoiceId) return;
-  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）を削除します。\n元に戻せません。\nよろしいですか？`);
+  // 削除は物理削除＝入金の記録も一緒に消え、発行し直しても引き継げなくなる。
+  const paidNote = r.paidAmount != null
+    ? `\n\n⚠️ この請求書には御入金金額 ¥${Number(r.paidAmount).toLocaleString()} が記録されています。\n削除するとこの入金の記録も消え、発行し直しても引き継げません。\n（残しておきたい場合は「削除」ではなく「発行取り消し」を使ってください）`
+    : '';
+  const ok = confirm(`「${r.customer}」の請求書（${r.invoiceNumber}）を削除します。\n元に戻せません。${paidNote}\n\nよろしいですか？`);
   if (!ok) return;
 
   try {
